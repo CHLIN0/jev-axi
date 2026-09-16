@@ -54,8 +54,9 @@ const current = (() => {
     return "";
   }
 })();
+const normalize = (s: string) => s.replace(/\r\n/g, "\n");
 if (check) {
-  if (current !== SKILL) {
+  if (normalize(current) !== normalize(SKILL)) {
     console.error("skills/jev-axi/SKILL.md is stale; run `pnpm build:skill`");
     process.exit(1);
   }
