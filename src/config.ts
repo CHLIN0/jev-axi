@@ -28,17 +28,17 @@ export const DEFAULT_THRESHOLDS: Thresholds = { act: 0.75, confirm: 0.45 };
 
 function base(kind: "config" | "state" | "cache"): string {
   const home = homedir();
+  // Explicit XDG overrides win on every platform (tests and containers rely on this).
+  const xdg = { config: "XDG_CONFIG_HOME", state: "XDG_STATE_HOME", cache: "XDG_CACHE_HOME" }[kind];
+  const override = process.env[xdg]?.trim();
+  if (override) return join(override, "jev-axi");
   if (process.platform === "win32") {
     const appdata = process.env["APPDATA"] ?? join(home, "AppData", "Roaming");
     const local = process.env["LOCALAPPDATA"] ?? join(home, "AppData", "Local");
-    return join(kind === "config" ? appdata : local, "jev-axi", kind === "config" ? "" : kind);
+    return kind === "config" ? join(appdata, "jev-axi") : join(local, "jev-axi", kind);
   }
-  const xdg = {
-    config: process.env["XDG_CONFIG_HOME"] ?? join(home, ".config"),
-    state: process.env["XDG_STATE_HOME"] ?? join(home, ".local", "state"),
-    cache: process.env["XDG_CACHE_HOME"] ?? join(home, ".cache"),
-  }[kind];
-  return join(xdg, "jev-axi");
+  const defaults = { config: join(home, ".config"), state: join(home, ".local", "state"), cache: join(home, ".cache") };
+  return join(defaults[kind], "jev-axi");
 }
 
 export const paths = {

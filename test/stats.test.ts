@@ -1,6 +1,6 @@
 import { mkdtempSync, mkdirSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { basename, join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { main } from "../src/cli.js";
 import { dailySeries, projectName, sparkline, sumBands, trendLabel, type UsageEntry } from "../src/usage.js";
@@ -27,7 +27,7 @@ describe("trend helpers", () => {
     const dir = mkdtempSync(join(tmpdir(), "proj-"));
     mkdirSync(join(dir, ".git"));
     mkdirSync(join(dir, "a", "b"), { recursive: true });
-    expect(projectName(join(dir, "a", "b"))).toBe(dir.split("/").pop());
+    expect(projectName(join(dir, "a", "b"))).toBe(basename(dir));
   });
 });
 
@@ -61,7 +61,7 @@ describe("stats command", () => {
     ];
     writeFileSync(join(legacy, "usage.jsonl"), rows.map((r) => JSON.stringify(r)).join("\n") + "\n");
     await main(["stats"], stdout);
-    expect(out).toContain(join(dir, "config", "jev-axi", "stats", "usage.jsonl"));
+    expect(out.replace(/\\\\/g, "\\")).toContain(join(dir, "config", "jev-axi", "stats", "usage.jsonl"));
     expect(out).toMatch(/lifetime: "?since/);
     expect(out).toContain("3 calls, 14 questions");
     expect(out).toMatch(/calls: "?2 \(\+100%\)/);
