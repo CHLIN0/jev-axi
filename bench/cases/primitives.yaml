@@ -1,0 +1,37 @@
+recipe: primitives
+description: Sanity checks for check, pick, and rate on short texts with unambiguous answers.
+cases:
+  - name: check-refund-yes
+    command: check
+    question: "Does the customer ask for money back?"
+    text: "I was charged twice for order A-104. Please send the duplicate charge back."
+    expect: { verdict: yes }
+  - name: check-refund-no
+    command: check
+    question: "Does the customer ask for money back?"
+    text: "Where do I change the email address on my account?"
+    expect: { verdict: no }
+  - name: pick-department
+    command: pick
+    question: "Which team should handle this message?"
+    options: [billing, technical, sales]
+    text: "Your webhook has been returning 500s since the deploy this morning and our orders are stuck."
+    expect: { pick: technical }
+  - name: pick-language
+    command: pick
+    question: "What programming language is this?"
+    options: [python, javascript, go, rust]
+    text: "fn main() { let v: Vec<u32> = (1..5).collect(); println!(\"{:?}\", v); }"
+    expect: { pick: rust }
+  - name: rate-severity-blocking
+    command: rate
+    question: "How severe is this bug report?"
+    levels: ["cosmetic, no functional impact", "degraded, workaround exists", "blocking, no workaround"]
+    text: "Checkout is completely broken on every browser; nobody can buy anything."
+    expect: { nearest: 2 }
+  - name: rate-severity-cosmetic
+    command: rate
+    question: "How severe is this bug report?"
+    levels: ["cosmetic, no functional impact", "degraded, workaround exists", "blocking, no workaround"]
+    text: "The footer logo is 2px off-center on the about page."
+    expect: { nearest: 0 }

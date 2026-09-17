@@ -1,0 +1,8 @@
+Why I switched from tabs to spaces (and back)
+
+For ten years I was a tabs person. Then a new team, a new linter, and a
+week of merge conflicts later, I gave in. Spaces it was. Two years after
+that I found myself on a Go codebase and, well, gofmt has opinions.
+
+The lesson is not about whitespace. It is that the cost of a convention is
+almost always lower than the cost of arguing about it.

@@ -1,0 +1,8 @@
+[10:41:02] INFO  starting api on :8080
+[10:41:02] INFO  loading config from /etc/api/config.yaml
+[10:41:02] DEBUG pool size 10
+[10:41:03] WARN  cache miss for key session:8f2a
+[10:41:05] ERROR failed to connect to postgres at db.internal:5432: connection refused (ECONNREFUSED)
+[10:41:05] ERROR migration runner aborted: no database connection
+[10:41:05] INFO  shutting down
+[10:41:05] INFO  exit code 1

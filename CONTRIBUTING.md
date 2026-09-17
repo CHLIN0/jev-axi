@@ -49,4 +49,6 @@ with the fake API in `test/`.
 
 Bump `version` in `package.json` and `src/version.ts`, commit, then create a
 GitHub release with a `vX.Y.Z` tag. The `publish` workflow runs lint, tests,
-and build, then publishes to npm with provenance using the `NPM_TOKEN` secret.
+and build, then publishes to npm with provenance. Authentication uses npm
+trusted publishing (GitHub OIDC), configured on the package's npm settings
+page, so no token is stored in the repository.

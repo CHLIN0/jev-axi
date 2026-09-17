@@ -1,0 +1,27 @@
+recipe: triage
+description: Root-cause line, category, and flaky-vs-real on representative build, test, and runtime logs.
+cases:
+  - name: tsc-error
+    file: bench/fixtures/logs/tsc-error.log
+    expect: { category: compile, root_cause_regex: "TS2339", flaky_max: 0.3 }
+  - name: vitest-assertion
+    file: bench/fixtures/logs/vitest-assertion.log
+    expect: { category: test, root_cause_regex: "expected 1 to be 2", flaky_max: 0.3 }
+  - name: npm-eresolve
+    file: bench/fixtures/logs/npm-eresolve.log
+    expect: { category: dependency, root_cause_regex: "ERESOLVE|peer react", flaky_max: 0.4 }
+  - name: db-connection-refused
+    file: bench/fixtures/logs/db-connection-refused.log
+    expect: { category_in: [infra, runtime], root_cause_regex: "ECONNREFUSED", flaky_min: 0.4 }
+  - name: python-keyerror
+    file: bench/fixtures/logs/python-keyerror.log
+    expect: { category: runtime, root_cause_regex: "KeyError", flaky_max: 0.3 }
+  - name: node-oom
+    file: bench/fixtures/logs/oom.log
+    expect: { category_in: [runtime, infra], root_cause_regex: "heap out of memory|heap limit", flaky_min: 0.3 }
+  - name: success-run
+    file: bench/fixtures/logs/success.log
+    expect: { has_error_max: 0.35 }
+  - name: flaky-e2e-timeout
+    file: bench/fixtures/logs/flaky-timeout.log
+    expect: { root_cause_regex: "TimeoutError|Timeout 30000ms", flaky_min: 0.5 }

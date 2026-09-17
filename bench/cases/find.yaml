@@ -1,0 +1,23 @@
+recipe: find
+description: Line-level semantic search inside single source files of this repository.
+cases:
+  - name: retry-error-translation
+    question: "where is a 429 rate limit error turned into a structured error?"
+    file: src/client.ts
+    expect: { top: 3, line_regex: "RateLimitError" }
+  - name: cache-key
+    question: "how is the cache key for a request computed?"
+    file: src/client.ts
+    expect: { top: 3, line_regex: "function cacheKey|createHash" }
+  - name: unknown-flag-throw
+    question: "where does an unknown flag get rejected?"
+    file: src/args.ts
+    expect: { top: 3, line_regex: "unknown flag" }
+  - name: token-estimate
+    question: "what ratio of characters to tokens is assumed?"
+    file: src/items.ts
+    expect: { top: 3, line_regex: "CHARS_PER_TOKEN" }
+  - name: legacy-ledger-migration
+    question: "where is the old usage ledger moved to its new location?"
+    file: src/usage.ts
+    expect: { top: 3, line_regex: "renameSync|migrateLegacyLedger" }

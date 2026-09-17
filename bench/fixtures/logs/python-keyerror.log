@@ -1,0 +1,8 @@
+Collecting invoices for 2026-09
+Loaded 412 rows from invoices.csv
+Traceback (most recent call last):
+  File "/app/report.py", line 88, in <module>
+    main()
+  File "/app/report.py", line 71, in main
+    total += row["amount_usd"]
+KeyError: 'amount_usd'

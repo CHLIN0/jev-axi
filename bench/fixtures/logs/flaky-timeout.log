@@ -1,0 +1,13 @@
+Running e2e suite (chromium)
+  ✓ login flow (2.1s)
+  ✓ dashboard renders (1.4s)
+  ✗ checkout completes
+    TimeoutError: page.waitForSelector: Timeout 30000ms exceeded.
+    waiting for locator('#order-confirmation')
+    at tests/e2e/checkout.spec.ts:44:18
+  ✓ logout (0.6s)
+
+  1 failed, 3 passed (41.2s)
+Retrying failed tests... (attempt 2 of 2)
+  ✓ checkout completes (3.9s)
+  4 passed (after retry)

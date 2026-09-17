@@ -1,0 +1,22 @@
+recipe: files
+description: Which file a developer would open for a task, against this repository's own src/ tree.
+dir: src
+cases:
+  - name: usage-ledger-format
+    task: "change what fields are written to the usage ledger for each API call"
+    expect: { top: 3, file_any: [src/usage.ts, src/client.ts] }
+  - name: band-thresholds
+    task: "make the default act/confirm confidence thresholds stricter"
+    expect: { top: 3, file_any: [src/config.ts, src/bands.ts] }
+  - name: diff-prefix-parsing
+    task: "diffs produced with custom --src-prefix are parsed with the wrong file path"
+    expect: { top: 3, file_any: [src/git.ts] }
+  - name: unknown-flag-message
+    task: "improve the error message shown when an unknown flag is passed"
+    expect: { top: 3, file_any: [src/args.ts] }
+  - name: sparkline-rendering
+    task: "the sparkline in the stats output should use more levels"
+    expect: { top: 3, file_any: [src/usage.ts, src/commands/stats.ts] }
+  - name: guard-questions
+    task: "add a new hazard question to the guard command"
+    expect: { top: 3, file_any: [src/recipes/questions.ts, src/commands/guard.ts] }

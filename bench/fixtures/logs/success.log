@@ -1,0 +1,11 @@
+> webapp@2.3.0 test
+> vitest run
+
+ ✓ src/utils.test.ts (14 tests) 22ms
+ ✓ src/api.test.ts (9 tests) 131ms
+ ✓ src/render.test.ts (6 tests) 40ms
+
+ Test Files  3 passed (3)
+      Tests  29 passed (29)
+   Start at  10:12:44
+   Duration  1.02s

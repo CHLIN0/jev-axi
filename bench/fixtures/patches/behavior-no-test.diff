@@ -1,0 +1,14 @@
+diff --git a/src/pricing.ts b/src/pricing.ts
+--- a/src/pricing.ts
++++ b/src/pricing.ts
+@@ -12,8 +12,12 @@ export function discountFor(customer: Customer, subtotal: number): number {
+   if (customer.tier === "enterprise") return subtotal * 0.2;
+-  if (customer.tier === "pro") return subtotal * 0.1;
+-  return 0;
++  if (customer.tier === "pro") {
++    // pro customers now get 15% over $500, 10% otherwise
++    return subtotal > 500 ? subtotal * 0.15 : subtotal * 0.1;
++  }
++  if (customer.referredBy) return Math.min(50, subtotal * 0.05);
++  return 0;
+ }

@@ -2,3 +2,6 @@
 node_modules/
 dist/
 .cache/
+bench/results/*
+!bench/results/baseline.json
+bench/agent/results/

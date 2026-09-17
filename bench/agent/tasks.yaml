@@ -1,0 +1,22 @@
+# Tasks for the agent benchmark. `check` runs inside the clone after the agent
+# finishes and must exit 0 for the run to count as a success.
+tasks:
+  - name: locate-flag-validation
+    prompt: >
+      Find the function that rejects unknown command-line flags in this repository and
+      add a one-line code comment above it that says "// AXI principle 6: fail loud on unknown flags".
+      Do not change behavior.
+    check: grep -rq "AXI principle 6" src/
+
+  - name: explain-error-shape
+    prompt: >
+      Write a file NOTES.md that names the source file and function where CLI errors are
+      converted into the structured stdout error format, in one sentence.
+    check: test -f NOTES.md && grep -q "formatCliError" NOTES.md
+
+  - name: triage-failing-test
+    prompt: >
+      Run `pnpm test 2>&1 | tail -200` (install dependencies first if needed). Then write
+      FAILURE.md with the single root-cause line of the first failing test, or the words
+      "all tests pass" if nothing failed.
+    check: test -f FAILURE.md

@@ -1,0 +1,17 @@
+> jev-axi@0.1.0 build /home/dev/jev-axi
+> tsc
+
+src/commands/stats.ts:42:15 - error TS2339: Property 'calls' does not exist on type 'UsageTotals'.
+
+42   const n = t.calls + t.cached;
+                 ~~~~~
+
+src/commands/stats.ts:57:3 - error TS2322: Type 'string' is not assignable to type 'number'.
+
+57   avg_ms: "0",
+     ~~~~~~
+
+
+Found 2 errors in the same file, starting at: src/commands/stats.ts:42
+
+ ELIFECYCLE  Command failed with exit code 2.

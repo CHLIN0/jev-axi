@@ -1,0 +1,15 @@
+recipe: diff
+description: Per-file flags and the overall verdict on hand-written patches.
+cases:
+  - name: hardcoded-db-password
+    file: bench/fixtures/patches/secret.diff
+    expect: { verdict: block, flags: { "src/db.ts": [secrets] } }
+  - name: docs-only
+    file: bench/fixtures/patches/docs-only.diff
+    expect: { verdict: ok, kind: docs }
+  - name: behavior-change-without-test
+    file: bench/fixtures/patches/behavior-no-test.diff
+    expect: { verdict: review, flags: { "src/pricing.ts": [needs-test] } }
+  - name: debug-leftovers-and-skipped-test
+    file: bench/fixtures/patches/leftovers.diff
+    expect: { verdict: review, flags: { "src/sync.ts": [leftovers] } }

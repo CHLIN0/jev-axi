@@ -1,0 +1,14 @@
+$ node scripts/build-index.js
+indexing 48,201 documents
+[12%] 5,800 docs, heap 1.2 GB
+[31%] 15,000 docs, heap 2.9 GB
+[44%] 21,200 docs, heap 3.8 GB
+
+<--- Last few GCs --->
+[3421:0x5f0c2a0]   182047 ms: Mark-Compact 4041.2 (4128.6) -> 4038.9 (4130.1) MB, 2012.3 / 0.0 ms  (average mu = 0.104, current mu = 0.031) allocation failure; scavenge might not succeed
+
+FATAL ERROR: Reached heap limit Allocation failed - JavaScript heap out of memory
+ 1: 0xb8c0f0 node::Abort() [node]
+ 2: 0xa7a8e5  [node]
+ 3: 0xd6f4b0 v8::Utils::ReportOOMFailure(v8::internal::Isolate*, char const*, bool) [node]
+Aborted (core dumped)
