@@ -88,3 +88,12 @@ describe("package.json", () => {
     expect(pkg.repository.url).toMatch(/^git\+https:/);
   });
 });
+
+describe("version", () => {
+  it("src/version.ts matches package.json so --version reports the published version", async () => {
+    const { readFileSync } = await import("node:fs");
+    const { VERSION } = await import("../src/version.js");
+    const pkg = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8"));
+    expect(VERSION).toBe(pkg.version);
+  });
+});

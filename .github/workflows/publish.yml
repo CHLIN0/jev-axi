@@ -11,6 +11,17 @@ jobs:
       id-token: write   # npm provenance
     steps:
       - uses: actions/checkout@v7
+      # Fail in seconds, not after the full build, when a release tag and the package version disagree.
+      - name: Check release tag matches package version
+        if: github.event_name == 'release'
+        run: |
+          pkg="v$(node -p "require('./package.json').version")"
+          src="v$(sed -nE 's/.*VERSION = "([^"]+)".*/\1/p' src/version.ts)"
+          tag="${{ github.event.release.tag_name }}"
+          if [ "$pkg" != "$tag" ] || [ "$src" != "$tag" ]; then
+            echo "::error::release tag $tag does not match package.json $pkg / src/version.ts $src. Bump both, commit, then re-point the release."
+            exit 1
+          fi
       - uses: pnpm/action-setup@v6
         with:
           version: 10

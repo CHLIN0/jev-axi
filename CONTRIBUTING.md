@@ -47,8 +47,9 @@ with the fake API in `test/`.
 
 ## Releasing
 
-Bump `version` in `package.json` and `src/version.ts`, commit, then create a
-GitHub release with a `vX.Y.Z` tag. The `publish` workflow runs lint, tests,
+Bump `version` in `package.json` and `src/version.ts` (a test fails if they
+disagree), commit and push, then create a GitHub release with a matching
+`vX.Y.Z` tag. The publish workflow refuses to run if the tag and version differ. The `publish` workflow runs lint, tests,
 and build, then publishes to npm with provenance. Authentication uses npm
 trusted publishing (GitHub OIDC), configured on the package's npm settings
 page, so no token is stored in the repository.
