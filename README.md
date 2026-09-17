@@ -311,16 +311,18 @@ jev-axi setup git-hooks --remove
   npx skills add shiftynick/jev-axi --skill jev-axi --agent claude-code   # or --agent '*' for all agents
   ```
 
-  The skill is `skills/jev-axi/SKILL.md` plus `references/` (a command reference
-  generated from `--help`, and a guide to writing good questions).
+  The skill is `skills/jev-axi/SKILL.md` plus `references/`: step-by-step workflows, reading
+  results, a guide to adding jev-axi to a repository, writing good questions, and a command
+  reference generated from `--help`.
 
 ## Data and billing
 
 Every command that asks Jev a question sends the text it judges (items, files, diffs, logs,
-fetched pages, or tool calls) to TypeSafe's API, which bills per request. Only the safety
-hook redacts credentials first and keeps routine calls local; other commands send their
-input as given, so don't point them at data you can't share with TypeSafe. Nothing
-else leaves the machine. Locally, jev-axi stores the API key (if set with `config set`),
+fetched pages, or tool calls) to TypeSafe's API, which bills per request. The safety hook,
+`guard-exec`, `diff`, `triage`, the git hooks, and the GitHub Action redact credentials in
+known formats first, and the safety checks decide routine calls locally. Other commands send
+their input as given, and redaction only catches recognizable credential formats, so don't
+point jev-axi at data you can't share with TypeSafe. Nothing else leaves the machine. Locally, jev-axi stores the API key (if set with `config set`),
 cached answers keyed by a hash of the request, the usage ledger (command, model, tokens,
 latency, project name, confidence bands), and the safety audit log.
 

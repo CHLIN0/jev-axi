@@ -10,7 +10,7 @@
  *   pnpm build:skill    regenerate references/commands.md, then validate
  *   pnpm check:skill    fail if commands.md is stale or validation fails (CI)
  */
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parse as parseYaml } from "yaml";
@@ -18,7 +18,8 @@ import { HELP } from "../src/cli.js";
 import { paths } from "../src/config.js";
 import { COMMAND_TABLE } from "../src/commands/table.js";
 
-const SKILL_DIR = join(dirname(fileURLToPath(import.meta.url)), "..", "skills", "jev-axi");
+const SKILLS_ROOT = join(dirname(fileURLToPath(import.meta.url)), "..", "skills");
+const SKILL_DIR = join(SKILLS_ROOT, "jev-axi");
 const SKILL_MD = join(SKILL_DIR, "SKILL.md");
 const COMMANDS_MD = join(SKILL_DIR, "references", "commands.md");
 
@@ -131,6 +132,23 @@ export function validateSkill(skillMd = readFileSync(SKILL_MD, "utf8"), skillDir
     if (target.split("/").length > 2) add(`link "${target}" is nested more than one level deep`);
     if (!existsSync(join(skillDir, target))) add(`link target "${target}" does not exist`);
   }
+  problems.push(...validateReferenceLinks(skillDir));
+  return problems;
+}
+
+/** Relative links inside references/*.md must resolve from that file's directory. */
+function validateReferenceLinks(skillDir: string): Problem[] {
+  const dir = join(skillDir, "references");
+  if (!existsSync(dir)) return [];
+  const problems: Problem[] = [];
+  for (const f of readdirSync(dir).filter((n) => n.endsWith(".md"))) {
+    const text = readFileSync(join(dir, f), "utf8").replace(/```[\s\S]*?```/g, "");
+    for (const m of text.matchAll(/\]\(([^)#\s]+)(#[^)]*)?\)/g)) {
+      const target = m[1]!;
+      if (/^[a-z]+:/i.test(target)) continue;
+      if (!existsSync(join(dir, target))) problems.push({ file: `references/${f}`, message: `link target "${target}" does not exist` });
+    }
+  }
   return problems;
 }
 
@@ -152,10 +170,13 @@ function main(): void {
     console.log("wrote skills/jev-axi/references/commands.md");
   }
 
-  const problems = validateSkill();
-  for (const p of problems) console.error(`skills/jev-axi/${p.file}: ${p.message}`);
-  if (problems.length) failed = true;
-  else console.log("skill is valid");
+  for (const name of readdirSync(SKILLS_ROOT).filter((n) => existsSync(join(SKILLS_ROOT, n, "SKILL.md")))) {
+    const dir = join(SKILLS_ROOT, name);
+    const problems = validateSkill(readFileSync(join(dir, "SKILL.md"), "utf8"), dir);
+    for (const p of problems) console.error(`skills/${name}/${p.file}: ${p.message}`);
+    if (problems.length) failed = true;
+    else console.log(`skills/${name} is valid`);
+  }
 
   if (failed) process.exit(1);
 }

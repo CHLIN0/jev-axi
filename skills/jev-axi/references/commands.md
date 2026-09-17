@@ -342,7 +342,7 @@ examples:
 Saved question sets (YAML).
 
 ```
-usage: jev-axi recipe list | show <name> | run <name> [state flags] | new <name>
+usage: jev-axi recipe list | show <name> | run <name> [state flags] | new <name> [--project]
 Reusable question sets in YAML. A recipe is one `ask` with saved questions, so a team writes its definition of
 "risky PR" or "urgent ticket" once and every agent session uses it.
 locations (project first): ./.jev-axi/recipes/<name>.yaml, then ~/.config/jev-axi/recipes/<name>.yaml (or your XDG/AppData config dir)
@@ -350,10 +350,13 @@ recipe file:
   description: one line
   questions:
     <id>: {type: choice|score|noul, instructions: "...", criteria: ...}
+flags for new:
+  --project            create it in ./.jev-axi/recipes to commit and share, instead of your personal directory
 flags for run:
   --state/--text/--state-json  state (piped stdin when none given); --full for distributions
 examples:
   jev-axi recipe new ticket-triage
+  jev-axi recipe new release-risk --project
   cat ticket.txt | jev-axi recipe run ticket-triage
 ```
 
