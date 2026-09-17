@@ -30,7 +30,7 @@ import {
 } from "./commands/meta.js";
 
 export const DESCRIPTION =
-  "Fast, cheap, calibrated judgments from TypeSafe's Jev model over files or stdin: rank files for a task, find lines, triage logs, review diffs, screen untrusted text, or ask pick/rate/check questions. Use it before reading everything yourself when a snap decision will do.";
+  "Calibrated judgments from TypeSafe's Jev model in about half a second: triage failing logs, screen untrusted text and risky agent tool calls, review diffs, filter or rank many items, and locate code in large unfamiliar repos.";
 
 export const TOP_HELP = `usage: jev-axi <command> [args] [flags]
 primitives[4]: pick, rate, check, ask
