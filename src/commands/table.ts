@@ -15,5 +15,6 @@ export const COMMAND_TABLE: [need: string, command: string][] = [
   ["Saved question sets (YAML)", "jev-axi recipe list | run <name> | new <name>"],
   ["Tokens and spend, recent", "jev-axi usage [--by day|command|project]"],
   ["Lifetime stats and trends", "jev-axi stats [--days N]"],
+  ["Show or clear the response cache", "jev-axi cache [clear [--stale]]"],
 ];
 

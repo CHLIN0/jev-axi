@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import {
   APIConnectionError,
@@ -14,7 +14,7 @@ import {
   type Usage,
 } from "@typesafe-ai/sdk";
 import { AxiError } from "./errors.js";
-import { ensureDir, paths, readConfig, resolveApiKey, resolveModel, resolveThresholds } from "./config.js";
+import { ensureDir, paths, readConfig, resolveApiKey, resolveCacheTtlHours, resolveModel, resolveThresholds } from "./config.js";
 import { projectName, recordUsage, type BandCounts } from "./usage.js";
 import { bandForConfidence, bandForNoul } from "./bands.js";
 
@@ -92,7 +92,115 @@ function cacheKey(model: string, state: EntryType, questions: QuestionMap): stri
 }
 
 export function cacheEnabled(): boolean {
-  return process.env["JEV_AXI_NO_CACHE"] !== "1";
+  return process.env["JEV_AXI_NO_CACHE"] !== "1" && resolveCacheTtlHours() > 0;
+}
+
+interface CacheEntry {
+  /** Concrete model version that produced the answers, e.g. jev-1.13.0. */
+  model: string;
+  answers: Record<string, Answer>;
+  usage: Usage;
+  /** Epoch ms when written. Entries from before 0.2.1 lack it and are treated as expired. */
+  created?: number;
+}
+
+/**
+ * The version an alias such as `jev-latest` resolved to on the most recent live
+ * call. Recorded on every live call so that when TypeSafe moves the alias, every
+ * cached answer from the previous version stops being served.
+ */
+function aliasFile(): string {
+  return join(paths.cacheDir(), "aliases.json");
+}
+
+function readAliases(): Record<string, string> {
+  try {
+    return JSON.parse(readFileSync(aliasFile(), "utf8")) as Record<string, string>;
+  } catch {
+    return {};
+  }
+}
+
+function recordAlias(requested: string, resolved: string): void {
+  try {
+    const aliases = readAliases();
+    if (aliases[requested] === resolved) return;
+    aliases[requested] = resolved;
+    ensureDir(paths.cacheDir());
+    writeFileSync(aliasFile(), JSON.stringify(aliases, null, 2));
+  } catch {
+    // best-effort
+  }
+}
+
+/** Why a cache entry must not be served, or undefined when it is fresh. */
+export function staleReason(entry: CacheEntry, requested: string, now = Date.now(), ttlHours = resolveCacheTtlHours(), aliases = readAliases()): string | undefined {
+  if (!entry.created) return "no timestamp";
+  if (now - entry.created > ttlHours * 3_600_000) return "expired";
+  const current = aliases[requested];
+  if (current && current !== entry.model) return `model moved from ${entry.model} to ${current}`;
+  return undefined;
+}
+
+/**
+ * Whether an entry is stale regardless of which alias asks for it: it expired, or
+ * no alias currently resolves to the model version that produced it.
+ */
+function isStaleEntry(e: CacheEntry, now: number, ttlHours: number, aliasTargets: Set<string>): boolean {
+  if (!e.created || now - e.created > ttlHours * 3_600_000) return true;
+  return aliasTargets.size > 0 && !aliasTargets.has(e.model);
+}
+
+function* cacheEntries(): Generator<{ file: string; entry?: CacheEntry }> {
+  const dir = paths.cacheDir();
+  if (!existsSync(dir)) return;
+  for (const f of readdirSync(dir)) {
+    if (!f.endsWith(".json") || f === "aliases.json") continue;
+    const file = join(dir, f);
+    try {
+      yield { file, entry: JSON.parse(readFileSync(file, "utf8")) as CacheEntry };
+    } catch {
+      yield { file };
+    }
+  }
+}
+
+export interface CacheStats {
+  dir: string;
+  entries: number;
+  fresh: number;
+  stale: number;
+  bytes: number;
+  ttlHours: number;
+  aliases: Record<string, string>;
+}
+
+export function cacheStats(now = Date.now()): CacheStats {
+  const ttlHours = resolveCacheTtlHours();
+  const aliases = readAliases();
+  const targets = new Set(Object.values(aliases));
+  const stats: CacheStats = { dir: paths.cacheDir(), entries: 0, fresh: 0, stale: 0, bytes: 0, ttlHours, aliases };
+  for (const { file, entry } of cacheEntries()) {
+    stats.entries++;
+    stats.bytes += statSync(file).size;
+    if (!entry || isStaleEntry(entry, now, ttlHours, targets)) stats.stale++;
+    else stats.fresh++;
+  }
+  return stats;
+}
+
+/** Delete cached responses: all of them (and the alias record), or only stale ones. Returns entries removed. */
+export function clearCache(onlyStale: boolean, now = Date.now()): number {
+  const ttlHours = resolveCacheTtlHours();
+  const targets = new Set(Object.values(readAliases()));
+  let removed = 0;
+  for (const { file, entry } of cacheEntries()) {
+    if (onlyStale && entry && !isStaleEntry(entry, now, ttlHours, targets)) continue;
+    rmSync(file, { force: true });
+    removed++;
+  }
+  if (!onlyStale) rmSync(aliasFile(), { force: true });
+  return removed;
 }
 
 /**
@@ -112,7 +220,8 @@ export async function evaluate(
 
   if (useCache && existsSync(cacheFile)) {
     try {
-      const hit = JSON.parse(readFileSync(cacheFile, "utf8")) as Omit<EvalResult, "ms" | "cached">;
+      const hit = JSON.parse(readFileSync(cacheFile, "utf8")) as CacheEntry;
+      if (staleReason(hit, model)) throw new Error("stale");
       recordUsage({
         ts: new Date().toISOString(),
         cmd: opts.command,
@@ -125,7 +234,7 @@ export async function evaluate(
         project: projectName(),
         bands: countBands(hit.answers),
       });
-      return { ...hit, ms: 0, cached: true };
+      return { model: hit.model, answers: hit.answers, usage: hit.usage, ms: 0, cached: true };
     } catch {
       // fall through to a live call
     }
@@ -146,6 +255,7 @@ export async function evaluate(
     ms,
     cached: false,
   };
+  recordAlias(model, raw.model);
   recordUsage({
     ts: new Date().toISOString(),
     cmd: opts.command,
@@ -161,7 +271,8 @@ export async function evaluate(
   if (useCache) {
     try {
       ensureDir(paths.cacheDir());
-      writeFileSync(cacheFile, JSON.stringify({ model: result.model, answers: result.answers, usage: result.usage }));
+      const entry: CacheEntry = { model: result.model, answers: result.answers, usage: result.usage, created: Date.now() };
+      writeFileSync(cacheFile, JSON.stringify(entry));
     } catch {
       // cache is best-effort
     }

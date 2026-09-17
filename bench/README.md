@@ -19,12 +19,25 @@ pnpm eval --save baseline                   # record bench/results/baseline.json
 pnpm eval --compare bench/results/baseline.json   # exit 1 on any regression
 ```
 
+Every case gets two results:
+
+- **pass**: did the command's answer meet the expectation (right verdict, right file in the top 3, and so on).
+- **score** (0 to 1): how much probability the model put on the right answer. For
+  example the probability of the expected file in `files`, the probability mass on
+  matching lines in `find`, or 1 minus the highest hazard for clean text in `guard`.
+
+Pass/fail saturates quickly; the score keeps moving. The summary shows the mean and
+minimum score per recipe and the five weakest cases, and `--compare` lists every case
+whose score moved by 0.05 or more, so a question edit that makes answers more or less
+confident is visible even when nothing flips from pass to fail.
+
 The loop for improving a recipe:
 
 1. Run `pnpm eval --compare bench/results/baseline.json` to see the current state.
 2. Edit the questions or thresholds in `src/recipes/questions.ts`.
 3. Rerun with `--compare`. Changed questions miss the cache automatically, so
-   only the affected calls are re-billed.
+   only the affected calls are re-billed. Aim to raise the weakest scores without
+   lowering others.
 4. When the numbers are better, `pnpm eval --save baseline` and commit both.
 
 Add a case whenever a recipe answers a real input wrongly: put the input under

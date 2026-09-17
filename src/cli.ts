@@ -16,6 +16,8 @@ import { RECIPE_HELP, recipeCommand } from "./commands/recipe.js";
 import { STATS_HELP, statsCommand } from "./commands/stats.js";
 export { COMMAND_TABLE } from "./commands/table.js";
 import {
+  CACHE_HELP,
+  cacheCommand,
   CONFIG_HELP,
   configCommand,
   MODELS_HELP,
@@ -27,13 +29,13 @@ import {
 } from "./commands/meta.js";
 
 export const DESCRIPTION =
-  "Fast calibrated judgments from TypeSafe's Jev model: pick, rate, check, rank, filter, and find over files or stdin. Prefer this over reading everything yourself when a snap decision will do.";
+  "Fast, cheap, calibrated judgments from TypeSafe's Jev model over files or stdin: rank files for a task, find lines, triage logs, review diffs, screen untrusted text, or ask pick/rate/check questions. Use it before reading everything yourself when a snap decision will do.";
 
 export const TOP_HELP = `usage: jev-axi <command> [args] [flags]
 primitives[4]: pick, rate, check, ask
 batch[3]: rank, filter, find
 recipes[6]: diff, files, triage, guard, commit, recipe
-meta[6]: (none)=status, models, usage, stats, config, setup
+meta[7]: (none)=status, models, usage, stats, cache, config, setup
 global flags:
   --json, --full, --model <name>, --no-cache, --act <p>, --confirm <p>, --help, -v/--version
 state:
@@ -65,6 +67,7 @@ const HELP: Record<string, string> = {
   commit: COMMIT_HELP,
   recipe: RECIPE_HELP,
   stats: STATS_HELP,
+  cache: CACHE_HELP,
   models: MODELS_HELP,
   usage: USAGE_HELP,
   config: CONFIG_HELP,
@@ -111,6 +114,7 @@ export async function main(argv = process.argv.slice(2), stdout?: { write: (chun
       commit: wrap(commitCommand),
       recipe: wrap(recipeCommand),
       stats: wrap(statsCommand),
+      cache: wrap(cacheCommand),
       models: wrap(modelsCommand),
       usage: wrap(usageCommand),
       config: wrap(configCommand),

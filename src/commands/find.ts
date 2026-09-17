@@ -6,7 +6,7 @@ import { evaluate, type ChoiceAnswer, type EvalResult, type NoulAnswer } from ".
 import { validation } from "../errors.js";
 import { oneLine, round } from "../format.js";
 import { estimateTokens, MAX_CHOICE_OPTIONS, STATE_TOKEN_BUDGET } from "../items.js";
-import { isStdinTTY, readStdinSync } from "../stdin.js";
+import { readImplicitStdin, readStdinSync, isStdinTTY } from "../stdin.js";
 import { evalOptions, finish, quote, thresholdsFrom } from "./common.js";
 
 export const FIND_HELP = `usage: jev-axi find "<question>" <file|-> [--top N] [--context N]
@@ -35,8 +35,9 @@ export async function findCommand(args: string[]): Promise<AxiRenderable> {
   let text: string;
   let label: string;
   if (src === undefined || src === "-") {
-    if (isStdinTTY()) throw validation("find needs a file path or piped stdin", ['jev-axi find "<question>" <file>']);
-    text = readStdinSync();
+    const piped = src === "-" ? (isStdinTTY() ? undefined : readStdinSync()) : readImplicitStdin();
+    if (piped === undefined || piped.trim() === "") throw validation(src === "-" ? "`-` was given but stdin is empty" : "find needs a file or piped input", ['Pass a file: jev-axi find "<question>" src/app.ts', "Or pipe text: cat build.log | jev-axi find \"<question>\""]);
+    text = piped;
     label = "stdin";
   } else {
     if (!existsSync(src)) throw validation(`file not found: ${src}`);

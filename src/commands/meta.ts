@@ -2,11 +2,13 @@ import { existsSync, readdirSync } from "node:fs";
 import type { Renderable as AxiRenderable } from "./common.js";
 import { AxiError, installSessionStartHooks, sessionStartHookStatus } from "axi-sdk-js";
 import { numberFlag, parseArgs } from "../args.js";
-import { listModels } from "../client.js";
+import { cacheStats, clearCache, listModels } from "../client.js";
 import {
+  DEFAULT_CACHE_TTL_HOURS,
   DEFAULT_MODEL,
   DEFAULT_PRICE,
   DEFAULT_THRESHOLDS,
+  resolveCacheTtlHours,
   resolvePrices,
   paths,
   readConfig,
@@ -99,6 +101,7 @@ keys:
   price.input      USD per 1M input tokens (default ${DEFAULT_PRICE.input})
   price.output     USD per 1M output tokens (default ${DEFAULT_PRICE.output})
   act, confirm     band thresholds on confidence (default ${DEFAULT_THRESHOLDS.act} / ${DEFAULT_THRESHOLDS.confirm})
+  cacheTtlHours    hours a cached response is reused (default ${DEFAULT_CACHE_TTL_HOURS}; 0 disables the cache)
 examples:
   jev-axi config
   jev-axi config set model jev-preview
@@ -133,7 +136,8 @@ function applyConfig(c: JevConfig, key: string, value: string | undefined): JevC
     case "price.output": next.price!.output = num(); break;
     case "act": next.thresholds!.act = num(); break;
     case "confirm": next.thresholds!.confirm = num(); break;
-    default: throw validation(`unknown config key ${JSON.stringify(key)}`, ["valid keys: apiKey, model, price.input, price.output, act, confirm"]);
+    case "cacheTtlHours": next.cacheTtlHours = num(); break;
+    default: throw validation(`unknown config key ${JSON.stringify(key)}`, ["valid keys: apiKey, model, price.input, price.output, act, confirm, cacheTtlHours"]);
   }
   return next;
 }
@@ -146,14 +150,54 @@ function showConfig(c: JevConfig): Record<string, unknown> {
     model: resolveModel(undefined, c),
     price: `$${resolvePrices(c).input}/1M in, $${resolvePrices(c).output}/1M out${c.price?.input === undefined && c.price?.output === undefined ? " (default)" : ""}`,
     thresholds: `act >= ${c.thresholds?.act ?? DEFAULT_THRESHOLDS.act}, confirm >= ${c.thresholds?.confirm ?? DEFAULT_THRESHOLDS.confirm}`,
-    cache: `${cacheCount()} responses in ${paths.cacheDir()}`,
+    cache: `${cacheCount()} responses in ${paths.cacheDir()}, reused for ${resolveCacheTtlHours(c)}h`,
   };
 }
 
 export function cacheCount(): number {
   const dir = paths.cacheDir();
   if (!existsSync(dir)) return 0;
-  return readdirSync(dir).filter((f) => f.endsWith(".json")).length;
+  return readdirSync(dir).filter((f) => f.endsWith(".json") && f !== "aliases.json").length;
+}
+
+export const CACHE_HELP = `usage: jev-axi cache [clear [--stale]]
+Show or clear locally cached responses. A cached answer is reused only while it is younger than the TTL
+(config key cacheTtlHours, default ${DEFAULT_CACHE_TTL_HOURS}) and was produced by the model version its alias
+(e.g. jev-latest) currently resolves to, so a model update invalidates old answers automatically.
+flags:
+  --stale              with clear: remove only expired or superseded entries
+examples:
+  jev-axi cache
+  jev-axi cache clear --stale
+  jev-axi config set cacheTtlHours 0     # disable caching
+`;
+
+export async function cacheCommand(args: string[]): Promise<AxiRenderable> {
+  const p = parseArgs(args, { "--stale": "bool" }, "cache");
+  const action = p.positional[0];
+  if (action && action !== "clear") throw validation(`unknown cache action ${JSON.stringify(action)}`, ["jev-axi cache", "jev-axi cache clear [--stale]"]);
+  if (p.bools["--stale"] && action !== "clear") throw validation("--stale only applies to `cache clear`");
+  if (action === "clear") {
+    const removed = clearCache(p.bools["--stale"]);
+    return { cache: removed ? `removed ${removed} ${p.bools["--stale"] ? "stale " : ""}responses` : `0 ${p.bools["--stale"] ? "stale " : ""}responses to remove (no-op)`, ...statsView() };
+  }
+  const view = statsView();
+  const help: string[] = [];
+  if (Number(view["stale"]) > 0) help.push("Run `jev-axi cache clear --stale` to delete expired or superseded responses");
+  return { ...view, ...(help.length ? { help } : {}) };
+}
+
+function statsView(): Record<string, unknown> {
+  const st = cacheStats();
+  return {
+    dir: st.dir,
+    entries: st.entries,
+    fresh: st.fresh,
+    stale: st.stale,
+    size: st.bytes < 1024 ? `${st.bytes} B` : `${Math.round(st.bytes / 1024)} KB`,
+    ttl: st.ttlHours > 0 ? `${st.ttlHours}h` : "disabled",
+    models: Object.keys(st.aliases).length ? Object.entries(st.aliases).map(([a, v]) => (a === v ? a : `${a} -> ${v}`)).join(", ") : "none observed yet",
+  };
 }
 
 export const SETUP_HELP = `usage: jev-axi setup hooks [--project] | jev-axi setup status

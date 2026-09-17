@@ -35,6 +35,7 @@ jev-axi                       # live status: key, model, usage, commands
 | Screen untrusted text | `curl ... \| jev-axi guard` (exit 3 on block) |
 | Check commit messages against diffs | `jev-axi commit [--range a..b]` |
 | Saved question sets (YAML) | `jev-axi recipe list \| run <name> \| new <name>` |
+| Show or clear the response cache | `jev-axi cache [clear [--stale]]` |
 | Tokens and estimated spend, recent | `jev-axi usage [--by day\|command\|project]` |
 | Lifetime stats and trends | `jev-axi stats [--days N]` |
 | Models, config, agent hooks | `jev-axi models`, `jev-axi config`, `jev-axi setup hooks` |
@@ -45,16 +46,15 @@ or piped stdin. Every command supports `--json`, `--full`, `--model`, `--no-cach
 ## Reading the output
 
 ```
-$ git diff | jev-axi pick "What kind of change is this?" --options feature,bugfix,refactor,docs
-pick: bugfix
-confidence: 0.91
+$ jev-axi pick "Which team should handle this?" --options billing,technical,sales --text "Our webhook has returned 500s since this morning's deploy"
+pick: technical
+confidence: 1
 band: act
-options[4]{option,p}:
-  bugfix,0.94
-  refactor,0.05
-  feature,0.01
-  docs,0
-usage: 1210in/38out 412ms jev-1.13.0
+options[3]{option,p}:
+  technical,1
+  billing,0
+  sales,0
+usage: 318in/38out 402ms jev-1.13.0 $0.00001
 ```
 
 - `p` is a probability. Choice probabilities sum to 1 across options.
@@ -62,8 +62,17 @@ usage: 1210in/38out 412ms jev-1.13.0
   answers it is the distance from 0.5, rescaled.
 - `band` is a policy the agent can branch on: `act` (>= 0.75), `confirm`
   (>= 0.45), `escalate` (below). Tune with `--act`, `--confirm`, or `config set`.
-- `usage` shows tokens, latency, model, and estimated cost.
-  Identical requests are served from a local cache and marked `cached`.
+- `usage` shows tokens, latency, the concrete model version, and estimated cost.
+
+Identical requests are served from a local cache and marked `cached`. A cached
+answer is reused for up to 24 hours (`jev-axi config set cacheTtlHours <n>`, 0 to
+disable) and only while `jev-latest` still resolves to the model version that
+produced it, so a model update invalidates old answers automatically.
+`jev-axi cache` shows the cache and `jev-axi cache clear [--stale]` empties it.
+
+Commands read piped stdin when there is content on it. Agent harnesses usually run
+commands with an empty stdin; that counts as no input, so `jev-axi diff` reviews the
+working tree and commands that need input say which flag or path to pass.
 
 ## Batch commands
 
@@ -95,7 +104,8 @@ can be reviewed and tuned without reading the command code.
 - `files` ranks every source file under a directory by how likely a developer
   needs to open it for a task. Run it before reading anything.
 - `triage` takes the tail of a log and returns the root-cause line, failure
-  category, whether it looks flaky, and severity.
+  category, whether it looks flaky, and severity. When the log shows no failure it
+  says so instead of guessing a root cause.
 - `guard` screens text for prompt injection, hidden instructions, exfiltration
   or destructive directives, embedded secrets, and pressure tactics. It exits 3
   on `block` so pipelines can gate on it.

@@ -1,7 +1,7 @@
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
 import { validation } from "./errors.js";
-import { isStdinTTY, readStdinSync } from "./stdin.js";
+import { isStdinTTY, readImplicitStdin, readStdinSync } from "./stdin.js";
 
 export interface Item {
   id: string;
@@ -45,17 +45,21 @@ export function gatherItems(sources: string[], opts: GatherOptions): Item[] {
     items.push({ id, label, text: preview(text, opts.preview), total: text.length });
   };
 
-  const effective = sources.length === 0 && !isStdinTTY() ? ["-"] : sources;
-  if (effective.length === 0) {
-    throw validation("no items given", [
-      "Pass file or directory paths, or pipe items on stdin (one per line, or JSONL with a `text` field)",
-    ]);
+  if (sources.length === 0) {
+    const piped = readImplicitStdin();
+    if (piped === undefined) {
+      throw validation("no items given", [
+        "Pass file or directory paths, e.g. `src/`, or pipe items on stdin (one per line, or JSONL with a `text` field)",
+      ]);
+    }
+    for (const row of parseLines(piped)) push(row.label, row.text);
   }
 
-  for (const src of effective) {
+  for (const src of sources) {
     if (src === "-") {
       if (isStdinTTY()) throw validation("stdin is a terminal; pipe items in or pass paths");
       const raw = readStdinSync();
+      if (raw.trim() === "") throw validation("`-` was given but stdin is empty", ["Pipe items in, or pass file or directory paths instead"]);
       for (const row of parseLines(raw)) push(row.label, row.text);
       continue;
     }

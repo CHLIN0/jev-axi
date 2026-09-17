@@ -19,6 +19,14 @@ export interface JevConfig {
   model?: string;
   price?: Prices;
   thresholds?: Partial<Thresholds>;
+  /** Hours a cached response stays valid; 0 disables the cache. */
+  cacheTtlHours?: number;
+}
+
+export const DEFAULT_CACHE_TTL_HOURS = 24;
+
+export function resolveCacheTtlHours(config = readConfig()): number {
+  return config.cacheTtlHours ?? DEFAULT_CACHE_TTL_HOURS;
 }
 
 export const DEFAULT_MODEL = "jev-latest";

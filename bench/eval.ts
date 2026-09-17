@@ -15,6 +15,7 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 
 import { join, resolve } from "node:path";
 import { parse as parseYaml } from "yaml";
 import { main } from "../src/cli.js";
+import { parseDiff } from "../src/git.js";
 
 type Expect = Record<string, unknown>;
 interface Case {
@@ -38,6 +39,8 @@ interface CaseResult {
   recipe: string;
   name: string;
   pass: boolean;
+  /** 0..1: probability mass the model put on the expected answer (mean over the case's expectations). */
+  score: number;
   detail: string;
   input_tokens: number;
   output_tokens: number;
@@ -100,49 +103,108 @@ const num = (s: unknown): number => {
 };
 const word = (s: unknown): string => String(s).split(" ")[0]!;
 
-type Check = { pass: boolean; detail: string };
-const ok = (detail: string): Check => ({ pass: true, detail });
-const fail = (detail: string): Check => ({ pass: false, detail });
+type Check = { pass: boolean; detail: string; score: number };
+const ok = (detail: string, score: number): Check => ({ pass: true, detail, score });
+const fail = (detail: string, score: number): Check => ({ pass: false, detail, score });
+const mean = (xs: number[]): number => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0);
+const r2 = (n: number): number => Math.round(n * 100) / 100;
+/** All answers across every call a command made (batch commands split into chunks). */
+const allAnswers = (r: any): Record<string, any> => Object.assign({}, ...((r.raw ?? []) as any[]).map((x) => x.answers));
 
 function checkGuard(r: any, e: Expect): Check {
   const allowed = e["verdict_in"] as string[];
-  return allowed.includes(r.verdict) ? ok(`${r.verdict}; top ${r.top_hazard}`) : fail(`verdict ${r.verdict}, wanted ${allowed.join("|")}; top ${r.top_hazard}`);
+  const maxHazard = Math.max(...(r.hazards as any[]).map((h) => Number(h.p)));
+  const score = allowed.includes("pass") ? 1 - maxHazard : maxHazard;
+  const detail = `${r.verdict}; top ${r.top_hazard}; score ${r2(score)}`;
+  return allowed.includes(r.verdict) ? ok(detail, score) : fail(`verdict ${r.verdict}, wanted ${allowed.join("|")}; top ${r.top_hazard}`, score);
 }
 
-function checkTriage(r: any, e: Expect): Check {
-  const a = r.raw[0].answers;
+function checkTriage(r: any, e: Expect, file: string): Check {
+  const a = allAnswers(r);
   const problems: string[] = [];
+  const parts: number[] = [];
+  const cats = a.category.probabilities as Record<string, number>;
   const cat = a.category.choice as string;
-  if (e["category"] && cat !== e["category"]) problems.push(`category ${cat} != ${e["category"]}`);
-  if (e["category_in"] && !(e["category_in"] as string[]).includes(cat)) problems.push(`category ${cat} not in ${(e["category_in"] as string[]).join("|")}`);
-  if (e["root_cause_regex"] && !new RegExp(String(e["root_cause_regex"])).test(r.root_cause.text)) problems.push(`root cause line ${r.root_cause.line} "${String(r.root_cause.text).slice(0, 60)}" !~ /${e["root_cause_regex"]}/`);
+  if (e["category"]) {
+    parts.push(cats[String(e["category"])] ?? 0);
+    if (cat !== e["category"]) problems.push(`category ${cat} != ${e["category"]}`);
+  }
+  if (e["category_in"]) {
+    const allowed = e["category_in"] as string[];
+    parts.push(allowed.reduce((sum, c) => sum + (cats[c] ?? 0), 0));
+    if (!allowed.includes(cat)) problems.push(`category ${cat} not in ${allowed.join("|")}`);
+  }
+  if (e["root_cause_regex"]) {
+    const re = new RegExp(String(e["root_cause_regex"]));
+    const lines = readFileSync(file, "utf8").replace(/\x1b\[[0-9;]*m/g, "").split(/\r?\n/);
+    const probs = a.first_error.probabilities as Record<string, number>;
+    parts.push(Object.entries(probs).reduce((sum, [id, p]) => sum + (re.test(lines[Number(id.slice(1)) - 1] ?? "") ? p : 0), 0));
+    if (!r.root_cause) problems.push("no root cause reported");
+    else if (!re.test(r.root_cause.text)) problems.push(`root cause line ${r.root_cause.line} "${String(r.root_cause.text).slice(0, 60)}" !~ /${e["root_cause_regex"]}/`);
+  }
   const flaky = a.flaky.noul as number;
-  if (e["flaky_max"] !== undefined && flaky > Number(e["flaky_max"])) problems.push(`flaky ${flaky} > ${e["flaky_max"]}`);
-  if (e["flaky_min"] !== undefined && flaky < Number(e["flaky_min"])) problems.push(`flaky ${flaky} < ${e["flaky_min"]}`);
+  if (e["flaky_max"] !== undefined) {
+    parts.push(1 - flaky);
+    if (flaky > Number(e["flaky_max"])) problems.push(`flaky ${flaky} > ${e["flaky_max"]}`);
+  }
+  if (e["flaky_min"] !== undefined) {
+    parts.push(flaky);
+    if (flaky < Number(e["flaky_min"])) problems.push(`flaky ${flaky} < ${e["flaky_min"]}`);
+  }
   const hasErr = a.has_error.noul as number;
-  if (e["has_error_max"] !== undefined && hasErr > Number(e["has_error_max"])) problems.push(`has_error ${hasErr} > ${e["has_error_max"]}`);
-  return problems.length ? fail(problems.join("; ")) : ok(`${cat}, line ${r.root_cause.line}, flaky ${flaky}`);
+  if (e["has_error_max"] !== undefined) {
+    parts.push(1 - hasErr);
+    if (hasErr > Number(e["has_error_max"])) problems.push(`has_error ${hasErr} > ${e["has_error_max"]}`);
+    if (r.root_cause) problems.push("reported a root cause for a run with no failure");
+  }
+  const score = mean(parts);
+  return problems.length ? fail(problems.join("; "), score) : ok(`${cat}, line ${r.root_cause?.line ?? "-"}, flaky ${flaky}; score ${r2(score)}`, score);
 }
 
-function checkDiff(r: any, e: Expect): Check {
+const FLAG_QUESTION: Record<string, string> = { secrets: "secrets", "needs-test": "needs_test", leftovers: "leftovers" };
+
+function checkDiff(r: any, e: Expect, file: string): Check {
+  const a = allAnswers(r);
   const problems: string[] = [];
+  const parts: number[] = [];
+  const order = parseDiff(readFileSync(file, "utf8")).map((f) => f.path);
+  const idFor = (path: string) => `F${String(order.findIndex((p) => p.startsWith(path)) + 1).padStart(3, "0")}`;
   if (e["verdict"] && r.verdict !== e["verdict"]) problems.push(`verdict ${r.verdict} != ${e["verdict"]}`);
-  if (e["kind"] && word(r.kind) !== e["kind"]) problems.push(`kind ${word(r.kind)} != ${e["kind"]}`);
+  if (e["verdict"] === "ok") {
+    const nouls = Object.entries(a).filter(([k, v]) => /^F\d+\.(secrets|needs_test|leftovers)$/.test(k) && v.type === "noul").map(([, v]) => Number(v.noul));
+    parts.push(1 - Math.max(0, ...nouls));
+  }
+  if (e["kind"]) {
+    parts.push(a.kind?.probabilities?.[String(e["kind"])] ?? 0);
+    if (word(r.kind) !== e["kind"]) problems.push(`kind ${word(r.kind)} != ${e["kind"]}`);
+  }
   const files: any[] = Array.isArray(r.files) ? r.files : [];
   for (const [path, wanted] of Object.entries((e["flags"] as Record<string, string[]>) ?? {})) {
     const row = files.find((f) => String(f.file).startsWith(path));
     const got = row ? String(row.flags).split(",") : [];
-    for (const w of wanted) if (!got.includes(w)) problems.push(`${path}: missing flag ${w} (got ${got.join(",") || "-"})`);
+    for (const w of wanted) {
+      const answer = w === "high-risk" ? a[`${idFor(path)}.risk`] : a[`${idFor(path)}.${FLAG_QUESTION[w]}`];
+      parts.push(answer ? (answer.type === "score" ? Number(answer.score) / 2 : Number(answer.noul)) : 0);
+      if (!got.includes(w)) problems.push(`${path}: missing flag ${w} (got ${got.join(",") || "-"})`);
+    }
   }
-  return problems.length ? fail(problems.join("; ")) : ok(`${r.verdict}, ${word(r.kind)}, ${files.map((f) => `${f.file}:${f.flags}`).join(" ")}`);
+  const score = mean(parts);
+  return problems.length
+    ? fail(problems.join("; "), score)
+    : ok(`${r.verdict}, ${word(r.kind)}, ${files.map((f) => `${f.file}:${f.flags}`).join(" ")}; score ${r2(score)}`, score);
 }
 
 function checkFiles(r: any, e: Expect): Check {
   const top = Number(e["top"] ?? 3);
   const wanted = e["file_any"] as string[];
-  const ranked: string[] = (r.files ?? []).slice(0, top).map((f: any) => String(f.file));
-  const hit = ranked.find((f) => wanted.some((w) => f === w || f.endsWith(w)));
-  return hit ? ok(`#${ranked.indexOf(hit) + 1} ${hit}`) : fail(`top ${top}: ${ranked.join(", ") || "none"}; wanted ${wanted.join("|")}`);
+  const all: any[] = r.files ?? [];
+  const matches = (f: string) => wanted.some((w) => f === w || f.endsWith(w));
+  const score = all.filter((f) => matches(String(f.file))).reduce((sum, f) => sum + Number(f.p), 0);
+  const ranked: string[] = all.slice(0, top).map((f: any) => String(f.file));
+  const hit = ranked.find(matches);
+  return hit
+    ? ok(`#${ranked.indexOf(hit) + 1} ${hit}; score ${r2(score)}`, score)
+    : fail(`top ${top}: ${ranked.join(", ") || "none"}; wanted ${wanted.join("|")}`, score);
 }
 
 function checkFind(r: any, e: Expect, file: string): Check {
@@ -152,19 +214,30 @@ function checkFind(r: any, e: Expect, file: string): Check {
   const window = Number(e["window"] ?? 2);
   const re = new RegExp(String(e["line_regex"]));
   const lines = readFileSync(file, "utf8").split(/\r?\n/);
-  const hits: any[] = (r.hits ?? []).slice(0, top);
   const near = (line: number) => lines.slice(Math.max(0, line - 1 - window), line + window).some((l) => re.test(l));
+  const all: any[] = r.hits ?? [];
+  const score = all.filter((h) => near(Number(h.line))).reduce((sum, h) => sum + Number(h.p), 0);
+  const hits = all.slice(0, top);
   const hit = hits.find((h) => near(Number(h.line)));
   return hit
-    ? ok(`line ${hit.line} (p ${hit.p}, rank ${hits.indexOf(hit) + 1})`)
-    : fail(`top ${top} lines ${hits.map((h) => h.line).join(",") || "none"}: no /${e["line_regex"]}/ within ${window} lines`);
+    ? ok(`line ${hit.line} (p ${hit.p}, rank ${hits.indexOf(hit) + 1}); score ${r2(score)}`, score)
+    : fail(`top ${top} lines ${hits.map((h) => h.line).join(",") || "none"}: no /${e["line_regex"]}/ within ${window} lines`, score);
 }
 
 function checkPrimitive(r: any, e: Expect): Check {
-  if (e["verdict"] !== undefined) return String(r.verdict) === String(e["verdict"]) ? ok(`${r.verdict} (p ${r.p_yes})`) : fail(`verdict ${r.verdict} != ${e["verdict"]} (p ${r.p_yes})`);
-  if (e["pick"] !== undefined) return r.pick === e["pick"] ? ok(`${r.pick} (${r.confidence})`) : fail(`pick ${r.pick} != ${e["pick"]}`);
-  if (e["nearest"] !== undefined) return num(r.nearest) === Number(e["nearest"]) ? ok(`${r.nearest} (score ${r.score})`) : fail(`nearest ${r.nearest} != ${e["nearest"]} (score ${r.score})`);
-  return fail("no expectation");
+  if (e["verdict"] !== undefined) {
+    const score = e["verdict"] === "yes" ? Number(r.p_yes) : 1 - Number(r.p_yes);
+    return String(r.verdict) === String(e["verdict"]) ? ok(`${r.verdict} (p ${r.p_yes})`, score) : fail(`verdict ${r.verdict} != ${e["verdict"]} (p ${r.p_yes})`, score);
+  }
+  if (e["pick"] !== undefined) {
+    const score = Number((r.options as any[]).find((o) => o.option === e["pick"])?.p ?? 0);
+    return r.pick === e["pick"] ? ok(`${r.pick} (${r.confidence})`, score) : fail(`pick ${r.pick} != ${e["pick"]}`, score);
+  }
+  if (e["nearest"] !== undefined) {
+    const score = Number((r.levels as any[]).find((l) => l.level === Number(e["nearest"]))?.p ?? 0);
+    return num(r.nearest) === Number(e["nearest"]) ? ok(`${r.nearest} (score ${r.score})`, score) : fail(`nearest ${r.nearest} != ${e["nearest"]} (score ${r.score})`, score);
+  }
+  return fail("no expectation", 0);
 }
 
 async function runCase(suite: Suite, c: Case): Promise<CaseResult> {
@@ -179,18 +252,19 @@ async function runCase(suite: Suite, c: Case): Promise<CaseResult> {
         break;
       case "triage":
         r = await run(["triage", join(ROOT, c.file!)]);
-        check = checkTriage(r, c.expect);
+        check = checkTriage(r, c.expect, join(ROOT, c.file!));
         break;
       case "diff":
         r = await run(["diff", "--file", join(ROOT, c.file!), "--full"]);
-        check = checkDiff(r, c.expect);
+        check = checkDiff(r, c.expect, join(ROOT, c.file!));
         break;
       case "files":
-        r = await run(["files", c.task!, join(ROOT, suite.dir ?? "src"), "--top", String(c.expect["top"] ?? 3)]);
+        // Fetch more rows than the pass cutoff so the score sees all probability on the right files.
+        r = await run(["files", c.task!, join(ROOT, suite.dir ?? "src"), "--top", "20"]);
         check = checkFiles(r, c.expect);
         break;
       case "find":
-        r = await run(["find", c.question!, join(ROOT, c.file!), "--top", String(c.expect["top"] ?? 3)]);
+        r = await run(["find", c.question!, join(ROOT, c.file!), "--top", "20", "--min", "0.001"]);
         check = checkFind(r, c.expect, join(ROOT, c.file!));
         break;
       case "primitives": {
@@ -204,9 +278,9 @@ async function runCase(suite: Suite, c: Case): Promise<CaseResult> {
       default:
         throw new Error(`unknown recipe ${suite.recipe}`);
     }
-    return { ...base, pass: check.pass, detail: check.detail, ...usageOf(r) };
+    return { ...base, pass: check.pass, score: r2(check.score), detail: check.detail, ...usageOf(r) };
   } catch (err) {
-    return { ...base, pass: false, detail: `error: ${(err as Error).message}`, input_tokens: 0, output_tokens: 0, ms: 0, cached: false, calls: 0 };
+    return { ...base, pass: false, score: 0, detail: `error: ${(err as Error).message}`, input_tokens: 0, output_tokens: 0, ms: 0, cached: false, calls: 0 };
   }
 }
 
@@ -236,31 +310,48 @@ async function mainEval(): Promise<void> {
 
   const byRecipe = new Map<string, CaseResult[]>();
   for (const r of results) byRecipe.set(r.recipe, [...(byRecipe.get(r.recipe) ?? []), r]);
-  console.log("\nrecipe        pass     tokens_in   avg_ms  calls");
+  const prev = compare ? (JSON.parse(readFileSync(resolve(compare), "utf8")) as Report) : undefined;
+  const prevMap = new Map((prev?.results ?? []).map((r) => [`${r.recipe}/${r.name}`, r]));
+  const prevScore = (list: CaseResult[]) => {
+    const olds = list.map((r) => prevMap.get(`${r.recipe}/${r.name}`)?.score).filter((x): x is number => typeof x === "number");
+    return olds.length === list.length ? mean(olds) : undefined;
+  };
+  const delta = (now: number, before: number | undefined) => (before === undefined ? "" : ` (${now - before >= 0 ? "+" : ""}${(now - before).toFixed(2)})`);
+
+  console.log("\nrecipe        pass        score   min  tokens_in   avg_ms");
   for (const [recipe, list] of byRecipe) {
     const passed = list.filter((r) => r.pass).length;
     const tokens = list.reduce((s, r) => s + r.input_tokens, 0);
     const live = list.filter((r) => !r.cached && r.calls > 0);
     const ms = live.length ? Math.round(live.reduce((s, r) => s + r.ms, 0) / live.length) : 0;
-    console.log(`${recipe.padEnd(12)} ${`${passed}/${list.length}`.padStart(5)} ${pct(passed, list.length).padStart(5)} ${String(tokens).padStart(10)} ${String(ms).padStart(8)} ${String(list.reduce((s, r) => s + r.calls, 0)).padStart(6)}`);
+    const sc = mean(list.map((r) => r.score));
+    const scoreCol = `${sc.toFixed(2)}${delta(sc, prevScore(list))}`;
+    console.log(`${recipe.padEnd(12)} ${`${passed}/${list.length}`.padStart(5)} ${pct(passed, list.length).padStart(5)} ${scoreCol.padStart(12)} ${Math.min(...list.map((r) => r.score)).toFixed(2).padStart(5)} ${String(tokens).padStart(10)} ${String(ms).padStart(8)}`);
   }
   const passed = results.filter((r) => r.pass).length;
   const tokens = results.reduce((s, r) => s + r.input_tokens, 0);
   const cost = (tokens * 0.042) / 1_000_000;
-  console.log(`${"total".padEnd(12)} ${`${passed}/${results.length}`.padStart(5)} ${pct(passed, results.length).padStart(5)} ${String(tokens).padStart(10)}   ~$${cost.toFixed(4)} at $0.042/1M in${results.some((r) => r.cached) ? " (some cached)" : ""}`);
+  const total = mean(results.map((r) => r.score));
+  console.log(`${"total".padEnd(12)} ${`${passed}/${results.length}`.padStart(5)} ${pct(passed, results.length).padStart(5)} ${`${total.toFixed(2)}${delta(total, prevScore(results))}`.padStart(12)} ${Math.min(...results.map((r) => r.score)).toFixed(2).padStart(5)} ${String(tokens).padStart(10)}   ~$${cost.toFixed(4)} at $0.042/1M in${results.some((r) => r.cached) ? " (some cached)" : ""}`);
+
+  const weakest = [...results].sort((a, b) => a.score - b.score).slice(0, 5);
+  console.log(`\nweakest cases: ${weakest.map((r) => `${r.recipe}/${r.name} ${r.score.toFixed(2)}`).join(", ")}`);
 
   const report: Report = { ts: new Date().toISOString(), model: model ?? "jev-latest", results };
 
-  if (compare) {
-    const prev = JSON.parse(readFileSync(resolve(compare), "utf8")) as Report;
-    const prevMap = new Map(prev.results.map((r) => [`${r.recipe}/${r.name}`, r]));
+  if (prev) {
     const regressions = results.filter((r) => !r.pass && prevMap.get(`${r.recipe}/${r.name}`)?.pass);
     const fixes = results.filter((r) => r.pass && prevMap.get(`${r.recipe}/${r.name}`)?.pass === false);
+    const moved = results
+      .map((r) => ({ r, before: prevMap.get(`${r.recipe}/${r.name}`)?.score }))
+      .filter((x): x is { r: CaseResult; before: number } => typeof x.before === "number" && Math.abs(x.r.score - x.before) >= 0.05)
+      .sort((a, b) => a.r.score - a.before - (b.r.score - b.before));
     const prevPassed = prev.results.filter((r) => r.pass).length;
     console.log(`\ncompare to ${compare} (${prev.model}, ${prev.ts.slice(0, 10)}): ${prevPassed}/${prev.results.length} -> ${passed}/${results.length}`);
     for (const r of fixes) console.log(`  fixed      ${r.recipe}/${r.name}: ${r.detail}`);
     for (const r of regressions) console.log(`  regressed  ${r.recipe}/${r.name}: ${r.detail}`);
-    if (!fixes.length && !regressions.length) console.log("  no case changed outcome");
+    for (const { r, before } of moved) console.log(`  score      ${r.recipe}/${r.name}: ${before.toFixed(2)} -> ${r.score.toFixed(2)}`);
+    if (!fixes.length && !regressions.length && !moved.length) console.log("  no case changed outcome or moved score by 0.05+");
     if (regressions.length) process.exitCode = 1;
   }
 

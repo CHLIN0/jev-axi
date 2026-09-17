@@ -12,7 +12,7 @@ description: >
 
 # jev-axi
 
-Fast calibrated judgments from TypeSafe's Jev model: pick, rate, check, rank, filter, and find over files or stdin. Prefer this over reading everything yourself when a snap decision will do.
+Fast, cheap, calibrated judgments from TypeSafe's Jev model over files or stdin: rank files for a task, find lines, triage logs, review diffs, screen untrusted text, or ask pick/rate/check questions. Use it before reading everything yourself when a snap decision will do.
 
 Jev is not an LLM. It answers typed questions about a state with calibrated
 probabilities in roughly half a second and never generates text. Every answer
@@ -40,6 +40,7 @@ Piped stdin is the state when no `--state` is given.
 | Saved question sets (YAML) | `jev-axi recipe list \| run <name> \| new <name>` |
 | Tokens and spend, recent | `jev-axi usage [--by day\|command\|project]` |
 | Lifetime stats and trends | `jev-axi stats [--days N]` |
+| Show or clear the response cache | `jev-axi cache [clear [--stale]]` |
 
 Ask narrow questions a knowledgeable person could answer in a second, and put
 several independent questions in one `ask` call. Start a task with `files`, run

@@ -5,8 +5,8 @@ import { evaluate, type ChoiceAnswer, type NoulAnswer, type ScoreAnswer } from "
 import { validation } from "../errors.js";
 import { oneLine, round } from "../format.js";
 import { estimateTokens, MAX_CHOICE_OPTIONS, STATE_TOKEN_BUDGET } from "../items.js";
-import { TRIAGE_DEFAULT_TAIL, TRIAGE_QUESTIONS } from "../recipes/questions.js";
-import { isStdinTTY, readStdinSync } from "../stdin.js";
+import { TRIAGE_DEFAULT_TAIL, TRIAGE_QUESTIONS, TRIAGE_THRESHOLDS } from "../recipes/questions.js";
+import { readImplicitStdin, readStdinSync, isStdinTTY } from "../stdin.js";
 import { evalOptions, finish, thresholdsFrom, type Renderable } from "./common.js";
 
 export const TRIAGE_HELP = `usage: jev-axi triage [<log file>|-] [--tail N] [--context N]
@@ -29,8 +29,9 @@ export async function triageCommand(args: string[]): Promise<Renderable> {
   let text: string;
   let label: string;
   if (src === undefined || src === "-") {
-    if (isStdinTTY()) throw validation("triage needs a log file or piped stdin", ["npm test 2>&1 | jev-axi triage"]);
-    text = readStdinSync();
+    const piped = src === "-" ? (isStdinTTY() ? undefined : readStdinSync()) : readImplicitStdin();
+    if (piped === undefined || piped.trim() === "") throw validation(src === "-" ? "`-` was given but stdin is empty" : "triage needs a file or piped input", ["Pass a log file: jev-axi triage build.log", "Or pipe it: npm test 2>&1 | jev-axi triage"]);
+    text = piped;
     label = "stdin";
   } else {
     if (!existsSync(src)) throw validation(`file not found: ${src}`);
@@ -60,22 +61,31 @@ export async function triageCommand(args: string[]): Promise<Renderable> {
   const from = Math.max(0, idx - context);
   const to = Math.min(lines.length, idx + context + 1);
   const sevLabel = ["none or warning", "partial failure", "total failure"][Math.min(2, Math.max(0, Math.round(severity.score)))];
+  // Below NO_FAILURE the log almost certainly succeeded: do not invent a root cause or a flaky/real call,
+  // which would send an agent hunting a bug that does not exist.
+  const noFailure = hasError < TRIAGE_THRESHOLDS.noFailure;
+  const uncertain = !noFailure && hasError < TRIAGE_THRESHOLDS.confirmedFailure;
   const out: Record<string, unknown> = {
     log: `${label} (last ${lines.length} of ${all.length} lines)`,
-    has_error: `${round(hasError, 2)} (${bandForNoul(hasError, t)})`,
-    category: `${category.choice} (${round(category.confidence)}, ${bandForConfidence(category.confidence, t)})`,
-    severity: `${sevLabel} (${round(severity.score)} of 0..2)`,
-    flaky: `${round(flaky, 2)} (${flaky >= 0.6 ? "likely environmental; retry first" : flaky <= 0.3 ? "likely a real bug" : "unclear"})`,
-    root_cause: { line: lineNo, p: round(first.probabilities[first.choice] ?? 0, 2), text: oneLine(lines[idx] ?? "", 160) },
-    context: lines.slice(from, to).map((l, i) => `${offset + from + i + 1}: ${l}`),
+    has_error: `${round(hasError, 2)} (${noFailure ? "no failure detected" : uncertain ? "uncertain" : "failure"})`,
   };
+  const help: string[] = [];
+  if (noFailure) {
+    out["verdict"] = "no failure detected; the run appears to have succeeded";
+    if (offset > 0) help.push(`Only the last ${lines.length} lines were checked; run with --tail ${Math.min(MAX_CHOICE_OPTIONS, all.length)} if the failure may be earlier`);
+    return finish(p, out, [r], help);
+  }
+  out["category"] = `${category.choice} (${round(category.confidence)}, ${bandForConfidence(category.confidence, t)})`;
+  out["severity"] = `${sevLabel} (${round(severity.score)} of 0..2)`;
+  out["flaky"] = `${round(flaky, 2)} (${flaky >= 0.6 ? "likely environmental; retry first" : flaky <= 0.3 ? "likely a real bug" : "unclear"})`;
+  out["root_cause"] = { line: lineNo, p: round(first.probabilities[first.choice] ?? 0, 2), text: oneLine(lines[idx] ?? "", 160) };
+  out["context"] = lines.slice(from, to).map((l, i) => `${offset + from + i + 1}: ${l}`);
   const alternatives = Object.entries(first.probabilities)
     .sort((a, b) => b[1] - a[1])
     .slice(1, 3)
     .filter(([, pr]) => pr >= 0.1)
     .map(([k, pr]) => `${Number(k.slice(1))} (${round(pr, 2)})`);
-  const help: string[] = [];
-  if (hasError < 0.35) help.push("No genuine failure detected; the run may have succeeded");
+  if (uncertain) help.push("has_error is uncertain; confirm there is a real failure before acting on the root cause");
   if (alternatives.length) help.push(`Other candidate root-cause lines: ${alternatives.join(", ")}`);
   if (offset > 0) help.push(`Run with --tail ${Math.min(MAX_CHOICE_OPTIONS, all.length)} to include earlier lines`);
   return finish(p, out, [r], help);

@@ -3,7 +3,7 @@ import type { EntryType } from "@typesafe-ai/sdk";
 import type { Parsed } from "./args.js";
 import { validation } from "./errors.js";
 import { estimateTokens, REQUEST_TOKEN_BUDGET } from "./items.js";
-import { isStdinTTY, readStdinSync } from "./stdin.js";
+import { isStdinTTY, readImplicitStdin, readStdinSync } from "./stdin.js";
 
 export const STATE_FLAGS = {
   "--state": "value",
@@ -36,12 +36,14 @@ export function loadState(p: Parsed): EntryType {
       raw = readFileSync(src, "utf8");
     }
     if (src.endsWith(".json")) return parseJson(raw, src);
-  } else if (!isStdinTTY()) {
-    raw = readStdinSync();
   } else {
-    throw validation("no state given", [
-      "Pass --state <path>, --state - (stdin), --text \"<literal>\", or --state-json '<json>'",
-    ]);
+    const piped = readImplicitStdin();
+    if (piped === undefined) {
+      throw validation("no state given", [
+        "Pass --state <path>, --text \"<literal>\", --state-json '<json>', or pipe the text in (e.g. `cat file | jev-axi ...`)",
+      ]);
+    }
+    raw = piped;
   }
   if (raw.trim() === "") throw validation("state is empty");
   const tokens = estimateTokens(raw);

@@ -12,4 +12,4 @@ cases:
     expect: { verdict: review, flags: { "src/pricing.ts": [needs-test] } }
   - name: debug-leftovers-and-skipped-test
     file: bench/fixtures/patches/leftovers.diff
-    expect: { verdict: review, flags: { "src/sync.ts": [leftovers] } }
+    expect: { verdict: review, kind: wip, flags: { "src/sync.ts": [leftovers] } }

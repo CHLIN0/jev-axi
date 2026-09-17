@@ -6,7 +6,7 @@ import { round } from "../format.js";
 import { isTestPath, loadDiff, parseDiff, type FileDiff } from "../git.js";
 import { estimateTokens, STATE_TOKEN_BUDGET } from "../items.js";
 import { DIFF_OVERALL, DIFF_PER_FILE, DIFF_THRESHOLDS } from "../recipes/questions.js";
-import { isStdinTTY, readStdinSync } from "../stdin.js";
+import { isStdinTTY, readImplicitStdin, readStdinSync } from "../stdin.js";
 import { evalOptions, finish, thresholdsFrom, type Renderable } from "./common.js";
 
 export const DIFF_HELP = `usage: jev-axi diff [--staged | --range <a..b> | --file <patch> | -]
@@ -33,17 +33,27 @@ interface FileVerdict {
 
 export async function diffCommand(args: string[]): Promise<Renderable> {
   const p = parseArgs(args, { "--staged": "bool", "--range": "value", "--file": "value" }, "diff");
-  const fromStdin = p.positional[0] === "-" || (p.positional.length === 0 && !p.bools["--staged"] && !p.values["--range"] && !p.values["--file"] && !isStdinTTY());
-  if (p.positional.length > (fromStdin ? 1 : 0)) throw validation(`unexpected argument ${JSON.stringify(p.positional[fromStdin ? 1 : 0])}`, ["Use --staged, --range <a..b>, --file <patch>, or pipe a diff"]);
+  const explicitStdin = p.positional[0] === "-";
+  if (p.positional.length > (explicitStdin ? 1 : 0)) throw validation(`unexpected argument ${JSON.stringify(p.positional[explicitStdin ? 1 : 0])}`, ["Use --staged, --range <a..b>, --file <patch>, or pipe a diff"]);
+  const sourceFlags = p.bools["--staged"] || p.values["--range"] !== undefined || p.values["--file"] !== undefined;
+  let stdin: string | undefined;
+  if (explicitStdin) {
+    stdin = isStdinTTY() ? undefined : readStdinSync();
+    if (!stdin || stdin.trim() === "") throw validation("`diff -` needs a diff piped on stdin", ["git diff | jev-axi diff -", "Run `jev-axi diff` with no arguments to review working-tree changes"]);
+  } else if (!sourceFlags) {
+    // A piped diff wins; otherwise review the working tree (agents run with empty stdin).
+    stdin = readImplicitStdin();
+  }
   const { text, label } = loadDiff({
     staged: p.bools["--staged"],
     range: p.values["--range"],
     file: p.values["--file"],
-    stdin: fromStdin ? readStdinSync() : undefined,
+    stdin,
   });
   const files = parseDiff(text);
   if (files.length === 0) {
-    return finish(p, { diff: label, files: "0 changed files; nothing to review" }, [], ["Run `jev-axi diff --staged` for the index or `--range main..HEAD` for commits"]);
+    const next = label === "working tree changes" ? ["Run `jev-axi diff --staged` for staged changes or `--range main..HEAD` for commits"] : label === "staged changes" ? ["Run `jev-axi diff` for unstaged working-tree changes"] : [];
+    return finish(p, { diff: label, files: "0 changed files; nothing to review" }, [], next);
   }
   const t = thresholdsFrom(p);
   // When the diff carries test files, a source file's tests are probably among them, so the

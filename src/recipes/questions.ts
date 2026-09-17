@@ -59,6 +59,7 @@ export const DIFF_OVERALL: QuestionSet = {
       docs: "Documentation or comments only",
       test: "Tests only",
       chore: "Build, dependencies, tooling, formatting, or config",
+      wip: "Temporary or debugging work not meant to ship as is: debug logging, commented-out code, skipped or disabled tests, TODO placeholders",
     },
   },
 };
@@ -125,6 +126,13 @@ export const TRIAGE_QUESTIONS = (lineIds: string[]): QuestionSet => ({
 });
 
 export const TRIAGE_DEFAULT_TAIL = 255;
+
+export const TRIAGE_THRESHOLDS = {
+  /** has_error below this: report no failure, no root cause. */
+  noFailure: 0.35,
+  /** has_error below this (and above noFailure): show the root cause but mark it uncertain. */
+  confirmedFailure: 0.65,
+};
 
 /* -------------------------------- guard -------------------------------- */
 
