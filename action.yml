@@ -1,0 +1,81 @@
+name: jev-axi
+description: Review pull request diffs and triage failed CI jobs with TypeSafe's Jev model, in about a second.
+author: shiftynick
+branding:
+  icon: check-circle
+  color: purple
+inputs:
+  api-key:
+    description: TypeSafe API key, e.g. secrets.TYPESAFE_API_KEY. When empty (pull requests from forks), the action skips.
+    required: true
+  mode:
+    description: "review: review the pull request diff. triage: find the root cause of failed jobs or a log file."
+    default: review
+  github-token:
+    description: Token for reading the diff or job logs and commenting.
+    default: ${{ github.token }}
+  comment:
+    description: Post the result as a pull request comment, updated in place on later runs.
+    default: "true"
+  fail-on:
+    description: "review mode: block (default; fail when a file appears to add a credential), review (fail on any flag), or never."
+    default: block
+  max-files:
+    description: review mode; skip pull requests that change more files than this.
+    default: "100"
+  pr-number:
+    description: review mode; the pull request to review when the event is not pull_request.
+    default: ""
+  log-file:
+    description: triage mode; a log file written by an earlier step.
+    default: ""
+  run-id:
+    description: triage mode; the workflow run whose failed jobs to triage. Defaults to the workflow_run event's run.
+    default: ""
+  version:
+    description: jev-axi version to run. Defaults to the version of this action.
+    default: ""
+  model:
+    description: Jev model, e.g. jev-preview. Defaults to jev-axi's default.
+    default: ""
+outputs:
+  verdict:
+    description: "review mode: ok, review, or block."
+    value: ${{ steps.run.outputs.verdict }}
+  flagged:
+    description: review mode; number of flagged files.
+    value: ${{ steps.run.outputs.flagged }}
+  root-cause:
+    description: triage mode; the likely root-cause line of the first failure.
+    value: ${{ steps.run.outputs.root-cause }}
+  comment-url:
+    description: URL of the pull request comment, when one was posted.
+    value: ${{ steps.run.outputs.comment-url }}
+runs:
+  using: composite
+  steps:
+    - id: node
+      shell: bash
+      run: |
+        major="$(node -p 'process.versions.node.split(".")[0]' 2>/dev/null || echo 0)"
+        if [ "$major" -ge 22 ]; then echo "ok=true" >> "$GITHUB_OUTPUT"; else echo "ok=false" >> "$GITHUB_OUTPUT"; fi
+    # jev-axi needs Node 22+; only touch the job's Node when the runner's is older.
+    - if: steps.node.outputs.ok != 'true'
+      uses: actions/setup-node@v7
+      with:
+        node-version: 22
+    - id: run
+      shell: bash
+      run: node "$GITHUB_ACTION_PATH/action/run.mjs"
+      env:
+        JEV_INPUT_API_KEY: ${{ inputs.api-key }}
+        JEV_INPUT_MODE: ${{ inputs.mode }}
+        JEV_INPUT_GITHUB_TOKEN: ${{ inputs.github-token }}
+        JEV_INPUT_COMMENT: ${{ inputs.comment }}
+        JEV_INPUT_FAIL_ON: ${{ inputs.fail-on }}
+        JEV_INPUT_MAX_FILES: ${{ inputs.max-files }}
+        JEV_INPUT_PR_NUMBER: ${{ inputs.pr-number }}
+        JEV_INPUT_LOG_FILE: ${{ inputs.log-file }}
+        JEV_INPUT_RUN_ID: ${{ inputs.run-id }}
+        JEV_INPUT_VERSION: ${{ inputs.version }}
+        JEV_INPUT_MODEL: ${{ inputs.model }}

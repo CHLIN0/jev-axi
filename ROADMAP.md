@@ -28,7 +28,7 @@ a judgment, and more use of the probabilities Jev returns.
 
 Run the same checks with nobody asking.
 
-- 🟡 **GitHub Action**: `diff` review on every pull request, posted as a
+- 🟡 **GitHub Action** (unreleased): `diff` review on every pull request, posted as a
   check with the risk score; `triage` on failed jobs, posted as a comment with the likely
   cause and the exact log lines.
 - 🟡 **Git hooks** (`jev-axi setup git-hooks`, unreleased): pre-commit blocks credentials found locally and

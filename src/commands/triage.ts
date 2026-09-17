@@ -7,6 +7,7 @@ import { oneLine, round } from "../format.js";
 import { estimateTokens, MAX_CHOICE_OPTIONS, STATE_TOKEN_BUDGET } from "../items.js";
 import { TRIAGE_DEFAULT_TAIL, TRIAGE_QUESTIONS, TRIAGE_THRESHOLDS } from "../recipes/questions.js";
 import { readImplicitStdin, readStdinSync, isStdinTTY } from "../stdin.js";
+import { redactSecrets } from "../safety.js";
 import { evalOptions, finish, thresholdsFrom, type Renderable } from "./common.js";
 
 export const TRIAGE_HELP = `usage: jev-axi triage [<log file>|-] [--tail N] [--context N]
@@ -38,7 +39,7 @@ export async function triageCommand(args: string[]): Promise<Renderable> {
     text = readFileSync(src, "utf8");
     label = src;
   }
-  const all = text.replace(/\x1b\[[0-9;]*m/g, "").split(/\r?\n/);
+  const all = redactSecrets(text.replace(/\x1b\[[0-9;]*m/g, "")).split(/\r?\n/);
   while (all.length && all[all.length - 1]!.trim() === "") all.pop();
   if (all.length === 0) throw validation(`${label} is empty`);
   const offset = Math.max(0, all.length - tail);

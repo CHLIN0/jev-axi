@@ -4,9 +4,9 @@ import { parseArgs } from "../args.js";
 import { evaluate, type NoulAnswer, type ScoreAnswer } from "../client.js";
 import { resolveThresholds } from "../config.js";
 import { AxiError, validation } from "../errors.js";
-import { loadDiff, parseDiff, runGit, type FileDiff } from "../git.js";
+import { loadDiff, parseDiff, runGit, scanAddedLines, type FileDiff } from "../git.js";
 import { COMMIT_QUESTIONS, COMMIT_THRESHOLDS } from "../recipes/questions.js";
-import { findStrongSecrets, redactSecrets } from "../safety.js";
+import { redactSecrets } from "../safety.js";
 import { renderWithHelp, type Renderable } from "./common.js";
 import { reviewFiles } from "./diff.js";
 
@@ -24,37 +24,6 @@ export const GIT_HOOKS_HELP = `git hooks (install: jev-axi setup git-hooks):
 const MAX_REVIEW_FILES = 60;
 const GIT_HOOK_TIMEOUT_MS = 20_000;
 const CONVENTIONAL = /^(feat|fix|docs|refactor|test|chore|build|ci|perf|style|revert)(\([^)]*\))?!?: \S/;
-
-export interface SecretHit {
-  file: string;
-  line: number;
-  kind: string;
-}
-
-/** Strong credential patterns on added lines, with new-file line numbers. Runs locally only. */
-export function scanAddedLines(files: FileDiff[]): SecretHit[] {
-  const hits: SecretHit[] = [];
-  for (const f of files) {
-    let line = 0;
-    const lines = f.patch.split("\n");
-    for (let i = 0; i < lines.length; i++) {
-      const text = lines[i]!;
-      const hunk = /^@@ -\d+(?:,\d+)? \+(\d+)(?:,\d+)? @@/.exec(text);
-      if (hunk) {
-        line = Number(hunk[1]);
-        continue;
-      }
-      if (text.startsWith("+++") || text.startsWith("---")) continue;
-      if (text.startsWith("+")) {
-        // Private keys span lines: test the added block that starts here.
-        const block = text.includes("-----BEGIN") ? lines.slice(i, i + 80).filter((l) => l.startsWith("+")).map((l) => l.slice(1)).join("\n") : text.slice(1);
-        for (const kind of findStrongSecrets(block)) hits.push({ file: f.path, line, kind });
-        line++;
-      } else if (text.startsWith(" ")) line++;
-    }
-  }
-  return hits;
-}
 
 /** Failures in a hook must never block a commit, except the checks the user asked to block on. */
 function skipped(what: string, error: unknown): string {
@@ -88,8 +57,7 @@ export async function preCommitHook(args: string[]): Promise<Renderable> {
 
   let review;
   try {
-    const redacted = files.map((f) => ({ ...f, patch: redactSecrets(f.patch) }));
-    review = await reviewFiles(redacted, { command: "git-hook", timeoutMs: GIT_HOOK_TIMEOUT_MS, maxRetries: 0 }, resolveThresholds({}));
+    review = await reviewFiles(files, { command: "git-hook", timeoutMs: GIT_HOOK_TIMEOUT_MS, maxRetries: 0 }, resolveThresholds({}));
   } catch (error) {
     return skipped("diff review", error);
   }

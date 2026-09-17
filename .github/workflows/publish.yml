@@ -39,3 +39,17 @@ jobs:
       - run: pnpm test
       - run: pnpm build
       - run: npm publish --access public --provenance
+  action-tag:
+    # Point the major tag (e.g. v0) at this release so `uses: shiftynick/jev-axi@v0` gets it.
+    needs: npm
+    if: github.event_name == 'release' && !github.event.release.prerelease
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+      - run: |
+          tag="${{ github.event.release.tag_name }}"
+          major="${tag%%.*}"
+          git tag -f "$major" "$tag"
+          git push -f origin "refs/tags/$major"

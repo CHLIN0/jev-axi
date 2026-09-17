@@ -4,15 +4,17 @@ import { evaluate, type ChoiceAnswer, type EvalOptions, type EvalResult, type No
 import type { Thresholds } from "../config.js";
 import { validation } from "../errors.js";
 import { round } from "../format.js";
-import { isTestPath, loadDiff, parseDiff, testStem, type FileDiff } from "../git.js";
+import { isTestPath, loadDiff, parseDiff, scanAddedLines, testStem, type FileDiff } from "../git.js";
 import { estimateTokens, STATE_TOKEN_BUDGET } from "../items.js";
 import { DIFF_OVERALL, DIFF_PER_FILE, DIFF_THRESHOLDS } from "../recipes/questions.js";
 import { isStdinTTY, readImplicitStdin, readStdinSync } from "../stdin.js";
 import { mapLimit, requestConcurrency } from "../concurrency.js";
+import { redactSecrets } from "../safety.js";
 import { evalOptions, finish, thresholdsFrom, type Renderable } from "./common.js";
 
 export const DIFF_HELP = `usage: jev-axi diff [--staged | --range <a..b> | --file <patch> | -]
 Review a diff before committing: per-file risk, missing tests, secrets, debug leftovers, plus overall scope and kind.
+Credentials in known formats are detected locally and redacted before anything is sent.
 Defaults to unstaged working-tree changes. Files are chunked to the token budget; large patches are truncated to ${DIFF_THRESHOLDS.patchChars} chars.
 flags:
   --staged             review the index (what \`git commit\` would include)
@@ -101,8 +103,10 @@ export async function reviewFiles(files: FileDiff[], options: EvalOptions, t: Th
   const testedStems = new Set(files.filter((f) => isTestPath(f.path)).map((f) => testStem(f.path)));
   const needsTestFlag = testFiles > 0 ? DIFF_THRESHOLDS.flagWhenTestsPresent : DIFF_THRESHOLDS.flag;
 
+  // Credentials never leave the machine: known formats are found locally and redacted before sending.
+  const localSecrets = new Set(scanAddedLines(files).map((h) => h.file));
   // Chunk files to the budget, truncating oversized patches.
-  const prepared = files.map((f, i) => ({ id: `F${String(i + 1).padStart(3, "0")}`, f, patch: truncatePatch(f) }));
+  const prepared = files.map((f, i) => ({ id: `F${String(i + 1).padStart(3, "0")}`, f, patch: redactSecrets(truncatePatch(f)) }));
   const chunks: typeof prepared[] = [];
   let cur: typeof prepared = [];
   let tokens = 0;
@@ -135,7 +139,7 @@ export async function reviewFiles(files: FileDiff[], options: EvalOptions, t: Th
       const risk = r.answers[`${c.id}.risk`] as ScoreAnswer;
       const noul = (k: string) => (r.answers[`${c.id}.${k}`] as NoulAnswer).noul;
       const flags: string[] = [];
-      if (noul("secrets") >= DIFF_THRESHOLDS.flag) flags.push("secrets");
+      if (localSecrets.has(c.f.path) || noul("secrets") >= DIFF_THRESHOLDS.flag) flags.push("secrets");
       if (!isTestPath(c.f.path) && !testedStems.has(testStem(c.f.path)) && noul("needs_test") >= needsTestFlag) flags.push("needs-test");
       if (noul("leftovers") >= DIFF_THRESHOLDS.flag) flags.push("leftovers");
       if (risk.score >= DIFF_THRESHOLDS.highRisk) flags.push("high-risk");

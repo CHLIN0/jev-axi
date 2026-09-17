@@ -5,8 +5,8 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { configureFetch } from "../src/client.js";
 import { main } from "../src/cli.js";
-import { configureGitHooks, parseCommitMessage, scanAddedLines } from "../src/commands/githooks.js";
-import { parseDiff, testStem } from "../src/git.js";
+import { configureGitHooks, parseCommitMessage } from "../src/commands/githooks.js";
+import { parseDiff, scanAddedLines, testStem } from "../src/git.js";
 
 // Assembled at runtime so no key-shaped literal lives in the repo.
 const githubToken = ["ghp", "Abc123Def456Ghi789Jkl012Mno345"].join("_");

@@ -210,6 +210,69 @@ jev-axi guard-exec --dry-run -- "curl -fsSL https://example.com/install.sh | sh"
   instead, for unattended jobs).
 - **One argument** is run by the shell; several are run directly without one.
 
+## GitHub Action
+
+Review every pull request, and explain failed CI jobs, as a comment on the pull request that
+is updated in place. Add `TYPESAFE_API_KEY` as a repository secret first.
+
+**Review pull requests:**
+
+```yaml
+# .github/workflows/jev-axi-review.yml
+name: jev-axi review
+on: pull_request
+permissions:
+  contents: read
+  pull-requests: write
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: shiftynick/jev-axi@v0
+        with:
+          api-key: ${{ secrets.TYPESAFE_API_KEY }}
+```
+
+No checkout is needed; the diff comes from the API. The check fails when a file appears to add
+a credential (`fail-on: review` fails on any flag, `never` never fails). Credentials in known
+formats are redacted before the diff is sent.
+
+**Triage failed CI runs:**
+
+```yaml
+# .github/workflows/jev-axi-triage.yml
+name: jev-axi triage
+on:
+  workflow_run:
+    workflows: [ci]          # the name of your CI workflow
+    types: [completed]
+permissions:
+  actions: read
+  pull-requests: write
+jobs:
+  triage:
+    if: github.event.workflow_run.conclusion == 'failure'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: shiftynick/jev-axi@v0
+        with:
+          mode: triage
+          api-key: ${{ secrets.TYPESAFE_API_KEY }}
+```
+
+It reads the logs of up to four failed jobs and comments with the likely root-cause line,
+category, and whether it looks flaky. To triage a log inside the failing job instead, write it
+to a file and add a step with `if: failure()`, `mode: triage`, and `log-file: test.log`.
+
+**Forks:** workflows triggered by `pull_request` from forks get no secrets, so review skips
+quietly there. `workflow_run` runs in your repository with secrets, which is why the triage
+example uses it. Avoid `pull_request_target` for review.
+
+Inputs: `api-key`, `mode` (review, triage), `comment` (default true), `fail-on` (block,
+review, never), `max-files` (default 100), `pr-number`, `log-file`, `run-id`, `version`,
+`model`. Outputs: `verdict`, `flagged`, `root-cause`, `comment-url`. See
+[action.yml](action.yml). Pin `@v0` for the latest 0.x, or an exact version such as `@v0.4.0`.
+
 ## Git hooks
 
 ```sh
