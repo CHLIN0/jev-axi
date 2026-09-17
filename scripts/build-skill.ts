@@ -15,6 +15,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parse as parseYaml } from "yaml";
 import { HELP } from "../src/cli.js";
+import { paths } from "../src/config.js";
 import { COMMAND_TABLE } from "../src/commands/table.js";
 
 const SKILL_DIR = join(dirname(fileURLToPath(import.meta.url)), "..", "skills", "jev-axi");
@@ -25,6 +26,25 @@ function commandName(cmd: string): string | undefined {
   return /jev-axi (\w+)/.exec(cmd)?.[1];
 }
 
+/**
+ * Some --help texts show the real config, stats, and cache locations, which differ per machine
+ * and OS. Replace them with the documented Linux defaults so the generated file is identical
+ * everywhere (and CI's drift check is meaningful).
+ */
+function portable(text: string): string {
+  const swaps: [string, string][] = [
+    [paths.usageLedger(), "~/.config/jev-axi/stats/usage.jsonl"],
+    [paths.configFile(), "~/.config/jev-axi/config.json"],
+    [paths.statsDir(), "~/.config/jev-axi/stats"],
+    [paths.configDir(), "~/.config/jev-axi"],
+    [paths.cacheDir(), "~/.cache/jev-axi"],
+  ];
+  let out = text;
+  for (const [actual, display] of swaps.sort((a, b) => b[0].length - a[0].length)) out = out.split(actual).join(display);
+  // Paths built with path.join use backslashes on Windows.
+  return out.replace(/~\\\.config\\jev-axi\\recipes/g, "~/.config/jev-axi/recipes");
+}
+
 export function renderCommandsReference(): string {
   const names = COMMAND_TABLE.map(([, cmd]) => commandName(cmd)).filter((n): n is string => !!n);
   const extra = Object.keys(HELP).filter((n) => !names.includes(n));
@@ -33,7 +53,7 @@ export function renderCommandsReference(): string {
   const sections = all
     .map((n) => {
       const need = COMMAND_TABLE.find(([, cmd]) => commandName(cmd) === n)?.[0];
-      const help = (HELP[n] ?? "").trimEnd();
+      const help = portable(HELP[n] ?? "").trimEnd();
       return `## ${n}\n\n${need ? `${need}.\n\n` : ""}\`\`\`\n${help}\n\`\`\``;
     })
     .join("\n\n");

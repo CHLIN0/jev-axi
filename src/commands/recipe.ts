@@ -12,7 +12,7 @@ import { evalOptions, finish, thresholdsFrom, type Renderable } from "./common.j
 export const RECIPE_HELP = `usage: jev-axi recipe list | show <name> | run <name> [state flags] | new <name>
 Reusable question sets in YAML. A recipe is one \`ask\` with saved questions, so a team writes its definition of
 "risky PR" or "urgent ticket" once and every agent session uses it.
-locations (project first): ./.jev-axi/recipes/<name>.yaml, then ${join("~", ".config", "jev-axi", "recipes")}/<name>.yaml
+locations (project first): ./.jev-axi/recipes/<name>.yaml, then ~/.config/jev-axi/recipes/<name>.yaml (or your XDG/AppData config dir)
 recipe file:
   description: one line
   questions:

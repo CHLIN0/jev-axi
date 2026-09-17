@@ -242,7 +242,7 @@ Saved question sets (YAML).
 usage: jev-axi recipe list | show <name> | run <name> [state flags] | new <name>
 Reusable question sets in YAML. A recipe is one `ask` with saved questions, so a team writes its definition of
 "risky PR" or "urgent ticket" once and every agent session uses it.
-locations (project first): ./.jev-axi/recipes/<name>.yaml, then ~/.config/jev-axi/recipes/<name>.yaml
+locations (project first): ./.jev-axi/recipes/<name>.yaml, then ~/.config/jev-axi/recipes/<name>.yaml (or your XDG/AppData config dir)
 recipe file:
   description: one line
   questions:
@@ -284,7 +284,7 @@ and a projected monthly cost.
 flags:
   --days <n>           trend window (default 30); the comparison period is the same length before it
   --top <n>            rows per breakdown (default 8)
-ledger: /home/shifty/.config/jev-axi/stats/usage.jsonl
+ledger: ~/.config/jev-axi/stats/usage.jsonl
 examples:
   jev-axi stats
   jev-axi stats --days 7
@@ -318,7 +318,7 @@ List the models available to this API key.
 
 ```
 usage: jev-axi config [set <key> <value> | unset <key>]
-Show or change persistent settings in /home/shifty/.config/jev-axi/config.json.
+Show or change persistent settings in ~/.config/jev-axi/config.json.
 keys:
   apiKey           TypeSafe API key (env TYPESAFE_API_KEY and ./.env take precedence)
   model            default model (default jev-latest)
