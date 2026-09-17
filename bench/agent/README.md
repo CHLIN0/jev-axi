@@ -42,3 +42,25 @@ Task design notes:
 - The expensive pattern in real transcripts is broad exploration across many files (see
   `bench/transcripts/mine.py`), so the tasks that matter are the broad ones.
 - Claude Code often explores inside subagents, which is why subagent transcripts are counted.
+
+## Results so far (Sonnet, t3code @ 6299503dd9)
+
+Broad tasks only, 3 repeats per task and condition, 2026-09-17:
+
+| condition | correct | mean cost | median duration | median file reads | runs that ranked files with jev-axi |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| baseline | 6/6 | $0.715 | 147 s | 14 | - |
+| jev-axi-explore | 5/6 | $0.694 | 133 s | 12 | 2/6 |
+| jev-axi-forced | 5/6 | $0.826 | 210 s | 18 | 6/6 |
+
+- Jev spend is negligible (at most $0.016 per run); the cost is all Claude.
+- The differences are within run-to-run noise. On this repo, Claude Code's grep-based
+  exploration is already efficient, and file ranking does not make it cheaper. Forcing
+  jev-axi adds turns.
+- Claude Code picks its built-in `Explore` over a custom `jev-explore` subagent, so only the
+  override reaches exploration at all. Even then it usually sees an obvious identifier and
+  greps, as instructed.
+- Earlier runs with the skill alone or a SessionStart hook never used jev-axi unprompted.
+
+jev-axi's case rests on judgments an agent can't make cheaply by reading (log triage,
+untrusted-text screening, safety checks) rather than on reducing exploration tokens.
