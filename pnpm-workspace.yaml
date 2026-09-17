@@ -1,6 +1,4 @@
 allowBuilds:
-  esbuild: set this to true or false
+  esbuild: true
 minimumReleaseAgeExclude:
   - axi-sdk-js@0.1.12
-onlyBuiltDependencies:
-  - esbuild
