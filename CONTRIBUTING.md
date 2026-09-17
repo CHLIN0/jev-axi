@@ -44,3 +44,9 @@ with the fake API in `test/`.
 - Keep each PR to one change.
 - `pnpm test`, `pnpm lint`, and `pnpm check:skill` must pass; CI runs them.
 - Never commit an API key. `.env` is gitignored; keep it that way.
+
+## Releasing
+
+Bump `version` in `package.json` and `src/version.ts`, commit, then create a
+GitHub release with a `vX.Y.Z` tag. The `publish` workflow runs lint, tests,
+and build, then publishes to npm with provenance using the `NPM_TOKEN` secret.
