@@ -10,7 +10,7 @@
  * Jev with obvious secrets redacted.
  */
 import { existsSync, readFileSync, statSync } from "node:fs";
-import { homedir } from "node:os";
+import { homedir, tmpdir } from "node:os";
 import { isAbsolute, relative, resolve } from "node:path";
 import type { EntryType } from "@typesafe-ai/sdk";
 
@@ -108,7 +108,8 @@ function routineSegment(segment: string): boolean {
   return false;
 }
 
-const SENSITIVE_PATH = /(^|\/)(\.ssh|\.gnupg|\.aws|\.kube|\.docker)(\/|$)|authorized_keys|known_hosts|\.(bash|zsh|fish)rc$|\.profile$|\.bash_profile$|(^|\/)\.git\/(hooks|config)(\/|$)|^\/etc\/|(^|\/)\.config\/(systemd|autostart)\//;
+/** Matched against the resolved path with forward slashes, so it also works for Windows paths. */
+const SENSITIVE_PATH = /(^|\/)(\.ssh|\.gnupg|\.aws|\.kube|\.docker)(\/|$)|authorized_keys|known_hosts|\.(bash|zsh|fish)rc$|\.profile$|\.bash_profile$|(^|\/)\.git\/(hooks|config)(\/|$)|^([a-z]:)?\/etc\/|(^|\/)\.config\/(systemd|autostart)\//i;
 
 function insideDir(path: string, dir: string): boolean {
   const rel = relative(resolve(dir), resolve(dir, path));
@@ -139,9 +140,12 @@ export function localVerdict(call: ToolCall): LocalVerdict {
     case "NotebookEdit": {
       const target = String(input["file_path"] ?? input["notebook_path"] ?? "");
       if (!target) return { decision: "evaluate", reason: "no target path" };
-      const abs = resolve(cwd, target.replace(/^~(?=\/)/, homedir()));
-      if (SENSITIVE_PATH.test(abs)) return { decision: "evaluate", reason: "target is a sensitive file" };
-      if (insideDir(abs, cwd) || abs.startsWith("/tmp/")) return { decision: "allow", reason: "edit inside the project" };
+      const abs = resolve(cwd, target.replace(/^~(?=[\\/])/, homedir()));
+      const slashed = abs.replace(/\\/g, "/");
+      if (SENSITIVE_PATH.test(slashed)) return { decision: "evaluate", reason: "target is a sensitive file" };
+      if (insideDir(abs, cwd) || insideDir(abs, tmpdir()) || /^([a-z]:)?\/tmp\//i.test(slashed)) {
+        return { decision: "allow", reason: "edit inside the project" };
+      }
       return { decision: "evaluate", reason: "edit outside the project" };
     }
     default:

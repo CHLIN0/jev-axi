@@ -24,6 +24,9 @@ describe("local fast path", () => {
     expect(localVerdict({ tool_name: "Write", tool_input: { file_path: "/work/proj/.git/hooks/pre-commit" }, cwd: "/work/proj" }).decision).toBe("evaluate");
     expect(localVerdict({ tool_name: "Write", tool_input: { file_path: "/home/u/.bashrc" }, cwd: "/work/proj" }).decision).toBe("evaluate");
     expect(localVerdict({ tool_name: "Read", tool_input: { file_path: "/etc/passwd" }, cwd: "/work/proj" }).decision).toBe("allow");
+    // Windows-style separators must not slip past the sensitive-path check.
+    expect(localVerdict({ tool_name: "Write", tool_input: { file_path: ".git\\hooks\\pre-commit" }, cwd: "/work/proj" }).decision).toBe("evaluate");
+    expect(localVerdict({ tool_name: "Write", tool_input: { file_path: join(tmpdir(), "x.md") }, cwd: "/work/proj" }).decision).toBe("allow");
   });
 });
 
