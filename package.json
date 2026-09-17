@@ -6,7 +6,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/shiftynick/jev-axi.git"
+    "url": "git+https://github.com/shiftynick/jev-axi.git"
   },
   "homepage": "https://github.com/shiftynick/jev-axi#readme",
   "bugs": {
@@ -25,7 +25,7 @@
   ],
   "type": "module",
   "bin": {
-    "jev-axi": "./dist/bin/jev-axi.js"
+    "jev-axi": "dist/bin/jev-axi.js"
   },
   "files": [
     "dist",

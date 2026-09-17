@@ -79,3 +79,12 @@ describe("preview", () => {
     expect(preview('import x from "y";\n', 100)).toBe('import x from "y";\n');
   });
 });
+
+describe("package.json", () => {
+  it("keeps a bin path that current npm accepts (no ./ prefix, no missing entry)", async () => {
+    const { readFileSync } = await import("node:fs");
+    const pkg = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8"));
+    expect(pkg.bin["jev-axi"]).toBe("dist/bin/jev-axi.js");
+    expect(pkg.repository.url).toMatch(/^git\+https:/);
+  });
+});
