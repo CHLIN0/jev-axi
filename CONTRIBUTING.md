@@ -1,6 +1,6 @@
 # Contributing
 
-Thanks for helping make jev-cli better. It is small on purpose, so most
+Thanks for helping make jev-axi better. It is small on purpose, so most
 contributions are one of three kinds.
 
 ## Setup

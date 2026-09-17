@@ -1,6 +1,6 @@
 # Security
 
-jev-cli sends the state you give it (file contents, diffs, logs, stdin) to the
+jev-axi sends the state you give it (file contents, diffs, logs, stdin) to the
 TypeSafe API. Do not point it at data you are not allowed to send to a third
 party. The `guard` command is a screening aid, not a guarantee; treat its
 verdicts as probabilities.

@@ -32,7 +32,7 @@ const origCwd = process.cwd();
 
 beforeEach(() => {
   out = "";
-  dir = mkdtempSync(join(tmpdir(), "jev-cli-recipes-"));
+  dir = mkdtempSync(join(tmpdir(), "jev-axi-recipes-"));
   process.chdir(dir);
   process.env["XDG_CACHE_HOME"] = join(dir, "cache");
   process.env["XDG_STATE_HOME"] = join(dir, "state");
@@ -96,8 +96,8 @@ describe("recipe", () => {
     await main(["recipe", "run", "tri", "--text", "help asap"], stdout);
     expect(out).toContain("recipe: tri");
     expect(out).toContain("urgent,noul,0.9,0.8,act");
-    mkdirSync(join(dir, ".jev-cli", "recipes"), { recursive: true });
-    writeFileSync(join(dir, ".jev-cli", "recipes", "bad.yaml"), "description: x\n");
+    mkdirSync(join(dir, ".jev-axi", "recipes"), { recursive: true });
+    writeFileSync(join(dir, ".jev-axi", "recipes", "bad.yaml"), "description: x\n");
     out = "";
     await main(["recipe", "run", "bad", "--text", "x"], stdout);
     expect(out).toContain("has no `questions` map");

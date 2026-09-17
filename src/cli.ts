@@ -29,7 +29,7 @@ import {
 export const DESCRIPTION =
   "Fast calibrated judgments from TypeSafe's Jev model: pick, rate, check, rank, filter, and find over files or stdin. Prefer this over reading everything yourself when a snap decision will do.";
 
-export const TOP_HELP = `usage: jev-cli <command> [args] [flags]
+export const TOP_HELP = `usage: jev-axi <command> [args] [flags]
 primitives[4]: pick, rate, check, ask
 batch[3]: rank, filter, find
 recipes[6]: diff, files, triage, guard, commit, recipe
@@ -41,13 +41,13 @@ state:
 bands:
   act (confidence >= 0.75), confirm (>= 0.45), escalate (below). Noul confidence = |p - 0.5| * 2
 examples:
-  jev-cli check "Does this diff touch authentication?" --state diff.txt
-  jev-cli pick "Which team?" --options billing,technical,sales --text "my card was charged twice"
-  jev-cli files "add a --json flag to the list command"
-  jev-cli diff --staged
-  npm test 2>&1 | jev-cli triage
-  curl -s <url> | jev-cli guard
-  jev-cli usage --by day
+  jev-axi check "Does this diff touch authentication?" --state diff.txt
+  jev-axi pick "Which team?" --options billing,technical,sales --text "my card was charged twice"
+  jev-axi files "add a --json flag to the list command"
+  jev-axi diff --staged
+  npm test 2>&1 | jev-axi triage
+  curl -s <url> | jev-axi guard
+  jev-axi usage --by day
 `;
 
 const HELP: Record<string, string> = {
@@ -89,7 +89,7 @@ export async function main(argv = process.argv.slice(2), stdout?: { write: (chun
   await runAxiCli({
     description: DESCRIPTION,
     version: VERSION,
-    packageName: "jev-cli",
+    packageName: "jev-axi",
     argv,
     ...(stdout ? { stdout } : {}),
     topLevelHelp: TOP_HELP,

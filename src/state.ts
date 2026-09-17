@@ -47,7 +47,7 @@ export function loadState(p: Parsed): EntryType {
   const tokens = estimateTokens(raw);
   if (tokens > REQUEST_TOKEN_BUDGET) {
     throw validation(`state is ~${tokens} tokens; the request budget is ~${REQUEST_TOKEN_BUDGET}`, [
-      "Trim the state, or use `jev-cli find` / `jev-cli rank`, which chunk automatically",
+      "Trim the state, or use `jev-axi find` / `jev-axi rank`, which chunk automatically",
     ]);
   }
   return raw;

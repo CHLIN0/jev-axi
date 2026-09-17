@@ -1,4 +1,4 @@
-# jev-cli: an AXI that lets agents offload snap judgments to Jev
+# jev-axi: an AXI that lets agents offload snap judgments to Jev
 
 Working notes, 2026-09-16. Sources: docs.typesafe.ai (introduction, primitives,
 confidence, patterns, cookbooks, HTTP API, JS SDK), the axi repo (10 principles,
@@ -74,18 +74,18 @@ The two design ideas that make this an AXI rather than a curl wrapper:
 
 ## 3. CLI shape
 
-Name: `jev-cli` (follows the `gh-axi` convention; `askjev` works as a friendlier
-alias). One binary, command-first: `jev-cli <command> [args] [flags]`.
+Name: `jev-axi` (follows the `gh-axi` convention; `askjev` works as a friendlier
+alias). One binary, command-first: `jev-axi <command> [args] [flags]`.
 
 ### Layer 0: raw primitives
 
 Thin, composable, and the escape hatch for everything else.
 
 ```
-jev-cli ask   --state <file|-> --questions <file|json>      # full request, any mix
-jev-cli pick  <question> --option a --option b ... [--state]  # single Choice
-jev-cli rate  <question> --level "..." --level "..." [--state] # single Score
-jev-cli check <statement> [--yes "..." --no "..."] [--state] # single Noul
+jev-axi ask   --state <file|-> --questions <file|json>      # full request, any mix
+jev-axi pick  <question> --option a --option b ... [--state]  # single Choice
+jev-axi rate  <question> --level "..." --level "..." [--state] # single Score
+jev-axi check <statement> [--yes "..." --no "..."] [--state] # single Noul
 ```
 
 State comes from `--state <path>`, `--state -` (stdin), or `--state-json`.
@@ -97,7 +97,7 @@ answers[3]{id,type,answer,confidence,band}:
   frustration,score,1.04,0.84,act
   is_urgent,noul,0.999,-,act
 usage: 312 in / 48 out
-help[1]: Run `jev-cli ask ... --full` for probability distributions
+help[1]: Run `jev-axi ask ... --full` for probability distributions
 ```
 
 `--full` adds the probability tables. `--json` gives the raw API response for
@@ -109,12 +109,12 @@ These are where the real savings live. Each takes a list of items, tags them
 with short IDs, packs as many as fit into a request, and prints ranked TOON.
 
 ```
-jev-cli rank   <query> <paths|-> [--top N]     # Choice over item IDs + a Noul "does any match?"
-jev-cli filter <predicate> <paths|-> [--min P] # one Noul per item, keep those above P
-jev-cli label  <paths|-> --labels a,b,c [--multi]  # Choice per item (or Nouls for multi-label)
-jev-cli score  <rubric.yaml> <paths|->         # composite scores, weights in the rubric file
-jev-cli find   <question> <file>               # line-level semantic grep (Choice over line IDs)
-jev-cli dedupe <paths|->                       # pairwise "same thing?" Score (merge / unsure / distinct)
+jev-axi rank   <query> <paths|-> [--top N]     # Choice over item IDs + a Noul "does any match?"
+jev-axi filter <predicate> <paths|-> [--min P] # one Noul per item, keep those above P
+jev-axi label  <paths|-> --labels a,b,c [--multi]  # Choice per item (or Nouls for multi-label)
+jev-axi score  <rubric.yaml> <paths|->         # composite scores, weights in the rubric file
+jev-axi find   <question> <file>               # line-level semantic grep (Choice over line IDs)
+jev-axi dedupe <paths|->                       # pairwise "same thing?" Score (merge / unsure / distinct)
 ```
 
 Item sources: file globs, a directory, stdin lines, stdin JSONL, or
@@ -136,16 +136,16 @@ Recipes built from layers 0 and 1 with tuned questions and thresholds baked
 in. These are the commands an agent reaches for by name.
 
 ```
-jev-cli triage <log|-> ...                  # first real error, severity, flake-vs-real, which subsystem
-jev-cli diff review [--staged]              # per-hunk: risk score, needs-test noul, scope creep noul, touches-secrets noul
-jev-cli commit check [--range]              # conventional format, message matches diff, PR is focused
-jev-cli files relevant "<task>" [--in src]  # rank repo files by relevance to a task, before reading any
-jev-cli tests pick "<change summary>"       # which test files to run for this change
-jev-cli docs stale <doc> --against <code>   # does the doc still describe the code
-jev-cli issue triage <text|-> ...           # category, severity, repro present, duplicate of <ids>
-jev-cli guard <text|->                      # prompt injection / hidden instruction / secret leak nouls
-jev-cli extract <schema.json> <text|->      # regex candidates in code, Jev selects the right span
-jev-cli route "<request>" --handlers h.yaml  # intent routing with confidence bands
+jev-axi triage <log|-> ...                  # first real error, severity, flake-vs-real, which subsystem
+jev-axi diff review [--staged]              # per-hunk: risk score, needs-test noul, scope creep noul, touches-secrets noul
+jev-axi commit check [--range]              # conventional format, message matches diff, PR is focused
+jev-axi files relevant "<task>" [--in src]  # rank repo files by relevance to a task, before reading any
+jev-axi tests pick "<change summary>"       # which test files to run for this change
+jev-axi docs stale <doc> --against <code>   # does the doc still describe the code
+jev-axi issue triage <text|-> ...           # category, severity, repro present, duplicate of <ids>
+jev-axi guard <text|->                      # prompt injection / hidden instruction / secret leak nouls
+jev-axi extract <schema.json> <text|->      # regex candidates in code, Jev selects the right span
+jev-axi route "<request>" --handlers h.yaml  # intent routing with confidence bands
 ```
 
 Every recipe is just a questions file plus a small piece of code that
@@ -156,9 +156,9 @@ and thresholds in one reviewable place; that becomes a design constraint.
 ### Layer 3: user-defined recipes
 
 ```
-jev-cli recipe list
-jev-cli recipe run <name> [--state ...]
-jev-cli recipe new <name>           # scaffolds ~/.config/jev-cli/recipes/<name>.yaml
+jev-axi recipe list
+jev-axi recipe run <name> [--state ...]
+jev-axi recipe new <name>           # scaffolds ~/.config/jev-axi/recipes/<name>.yaml
 ```
 
 A recipe is YAML: state adapters, a questions map, thresholds, and an output
@@ -182,20 +182,20 @@ lets every agent session use it.
 
 Ordered roughly by how soon I would actually use them.
 
-**Read less, decide more.** `jev-cli files relevant "fix the retry loop"`
+**Read less, decide more.** `jev-axi files relevant "fix the retry loop"`
 over 400 file previews costs one request. Today I grep, open ten files, and
 burn thousands of tokens on eight that did not matter. Same for
 `tests pick`, `triage`, and `find`. The agent starts every task with a
 ranked shortlist.
 
-**Semantic grep.** `jev-cli find "where do we decide the retry delay?" src/net.ts`
+**Semantic grep.** `jev-axi find "where do we decide the retry delay?" src/net.ts`
 tags each line with an ID and asks a Choice over 255 lines at a time, plus a
 Noul for "does this file answer it at all". This is the cookbook's
 line-by-line search, applied to code. It works on logs, transcripts, and
 docs the same way.
 
 **Cheap guardrails in the loop.** Pipe every tool result, web page, or
-fetched README through `jev-cli guard` before it enters my context. Prompt
+fetched README through `jev-axi guard` before it enters my context. Prompt
 injection, hidden instructions, and leaked credentials become Nouls with
 thresholds, in 100 ms, before the expensive model ever sees the text.
 
@@ -213,7 +213,7 @@ Stop hook in Claude Code.
 
 **Skill and tool selection.** The skill-suggestion cookbook cut wrong skill
 loads by more than half by ranking 182 skills in one request. A
-`jev-cli route` recipe over a harness's skill or MCP tool catalog does the
+`jev-axi route` recipe over a harness's skill or MCP tool catalog does the
 same for any agent, and a session-start hook could inject "the skill most
 relevant to this repo" as ambient context.
 
@@ -230,7 +230,7 @@ is a recipe too.
 
 **Feature generation for real ML.** `score` with a rubric turns any text
 corpus into numeric columns. The autoresearch cookbook feeds those into a
-tree model. An agent could run `jev-cli score rubric.yaml data/*.txt --json`
+tree model. An agent could run `jev-axi score rubric.yaml data/*.txt --json`
 and hand a data scientist a feature table.
 
 **Consistency and A/B on judgment.** Because answers are calibrated and
@@ -259,13 +259,13 @@ backend for that; `--json` is the contract.
 - TypeScript on Node 20+, `axi-sdk-js` for dispatch, TOON, errors, hooks,
   and the version fast path (this is exactly how `gh-axi` is built).
 - `@typesafe-ai/sdk` for the API client, retries, and typed answers.
-- Single package published to npm as `jev-cli`; `npx -y jev-cli` works with
+- Single package published to npm as `jev-axi`; `npx -y jev-axi` works with
   no install. Cross-platform comes free with Node; add a `bun build --compile`
   target later if a static binary matters.
-- Layout mirrors `gh-axi`: `bin/jev-cli.ts`, `src/cli.ts`,
-  `src/commands/*.ts`, `src/recipes/*.yaml`, `skills/jev-cli/SKILL.md`,
+- Layout mirrors `gh-axi`: `bin/jev-axi.ts`, `src/cli.ts`,
+  `src/commands/*.ts`, `src/recipes/*.yaml`, `skills/jev-axi/SKILL.md`,
   `test/` with vitest and recorded API fixtures so tests run without a key.
-- Response cache in `~/.cache/jev-cli/` keyed on request hash.
+- Response cache in `~/.cache/jev-axi/` keyed on request hash.
 
 ## 7. Suggested first milestone
 
@@ -276,7 +276,7 @@ backend for that; `--json` is the contract.
 4. Two recipes that prove the value on this very repo: `files relevant` and
    `diff review`.
 5. A benchmark script in the spirit of the axi repo: the same coding task
-   with and without `jev-cli files relevant`, measuring tokens and turns.
+   with and without `jev-axi files relevant`, measuring tokens and turns.
 
 Open questions for you: confirm pricing and rate limits in the console, and
-decide whether the binary name is `jev-cli`, `askjev`, or both.
+decide whether the binary name is `jev-axi`, `askjev`, or both.

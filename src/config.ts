@@ -26,7 +26,7 @@ export const DEFAULT_MODEL = "jev-latest";
 export const DEFAULT_PRICE: Required<Prices> = { input: 0.042, output: 0 };
 export const DEFAULT_THRESHOLDS: Thresholds = { act: 0.75, confirm: 0.45 };
 
-/** One-time rename of a pre-rename `jev-axi` directory to `jev-cli`, if the new one does not exist yet. */
+/** One-time rename of a pre-rename `jev-axi` directory to `jev-axi`, if the new one does not exist yet. */
 function adoptLegacyDir(dir: string): string {
   const legacy = join(dirname(dir), "jev-axi");
   if (!existsSync(dir) && existsSync(legacy)) {
@@ -48,14 +48,14 @@ function baseUnmigrated(kind: "config" | "state" | "cache"): string {
   // Explicit XDG overrides win on every platform (tests and containers rely on this).
   const xdg = { config: "XDG_CONFIG_HOME", state: "XDG_STATE_HOME", cache: "XDG_CACHE_HOME" }[kind];
   const override = process.env[xdg]?.trim();
-  if (override) return join(override, "jev-cli");
+  if (override) return join(override, "jev-axi");
   if (process.platform === "win32") {
     const appdata = process.env["APPDATA"] ?? join(home, "AppData", "Roaming");
     const local = process.env["LOCALAPPDATA"] ?? join(home, "AppData", "Local");
-    return kind === "config" ? join(appdata, "jev-cli") : join(local, "jev-cli", kind);
+    return kind === "config" ? join(appdata, "jev-axi") : join(local, "jev-axi", kind);
   }
   const defaults = { config: join(home, ".config"), state: join(home, ".local", "state"), cache: join(home, ".cache") };
-  return join(defaults[kind], "jev-cli");
+  return join(defaults[kind], "jev-axi");
 }
 
 export const paths = {

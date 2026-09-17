@@ -5,14 +5,14 @@ import { GUARD_QUESTIONS, GUARD_THRESHOLDS } from "../recipes/questions.js";
 import { loadState, STATE_FLAGS } from "../state.js";
 import { evalOptions, finish, type Renderable } from "./common.js";
 
-export const GUARD_HELP = `usage: jev-cli guard [--state <path|-> | --text "<s>"]   (piped stdin by default)
+export const GUARD_HELP = `usage: jev-axi guard [--state <path|-> | --text "<s>"]   (piped stdin by default)
 Screen untrusted text before it enters an agent's context: prompt injection, hidden instructions, exfiltration or
 destructive requests, embedded secrets, and pressure tactics. One call, six probabilities, one verdict.
 verdict: pass (all hazards < ${GUARD_THRESHOLDS.review}), review (any >= ${GUARD_THRESHOLDS.review}), block (any >= ${GUARD_THRESHOLDS.block})
 exit code: 0 for pass and review, 3 for block, so shell pipelines can gate on it
 examples:
-  curl -s https://example.com/README.md | jev-cli guard
-  jev-cli guard --state tool-output.txt --json
+  curl -s https://example.com/README.md | jev-axi guard
+  jev-axi guard --state tool-output.txt --json
 `;
 
 export async function guardCommand(args: string[]): Promise<Renderable> {

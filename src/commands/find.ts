@@ -9,7 +9,7 @@ import { estimateTokens, MAX_CHOICE_OPTIONS, STATE_TOKEN_BUDGET } from "../items
 import { isStdinTTY, readStdinSync } from "../stdin.js";
 import { evalOptions, finish, quote, thresholdsFrom } from "./common.js";
 
-export const FIND_HELP = `usage: jev-cli find "<question>" <file|-> [--top N] [--context N]
+export const FIND_HELP = `usage: jev-axi find "<question>" <file|-> [--top N] [--context N]
 Semantic grep: which line of a file best answers the question, plus whether the file answers it at all.
 Lines are tagged with ids and searched in windows of 255; results are merged across windows.
 flags:
@@ -17,17 +17,17 @@ flags:
   --context <n>        extra lines of context around each hit (default 0)
   --min <p>            hide lines below this probability (default 0.01)
 examples:
-  jev-cli find "where is the retry delay decided?" src/net.ts
-  jev-cli find "the first real error, not a warning" build.log --top 3
-  git log --oneline -200 | jev-cli find "the commit that introduced the flaky test" -
+  jev-axi find "where is the retry delay decided?" src/net.ts
+  jev-axi find "the first real error, not a warning" build.log --top 3
+  git log --oneline -200 | jev-axi find "the commit that introduced the flaky test" -
 `;
 
 export async function findCommand(args: string[]): Promise<AxiRenderable> {
   const p = parseArgs(args, { "--top": "value", "--context": "value", "--min": "value" }, "find");
   const q = p.positional[0];
-  if (!q || q.trim() === "") throw validation("find needs a question as its first argument", ['jev-cli find "<question>" <file>']);
+  if (!q || q.trim() === "") throw validation("find needs a question as its first argument", ['jev-axi find "<question>" <file>']);
   const src = p.positional[1];
-  if (p.positional.length > 2) throw validation(`unexpected argument ${JSON.stringify(p.positional[2])}`, ["find takes one file; use `jev-cli rank` across many files"]);
+  if (p.positional.length > 2) throw validation(`unexpected argument ${JSON.stringify(p.positional[2])}`, ["find takes one file; use `jev-axi rank` across many files"]);
   const top = numberFlag(p, "--top", 5, 1);
   const context = numberFlag(p, "--context", 0, 0, 20);
   const min = numberFlag(p, "--min", 0.01, 0, 1);
@@ -35,7 +35,7 @@ export async function findCommand(args: string[]): Promise<AxiRenderable> {
   let text: string;
   let label: string;
   if (src === undefined || src === "-") {
-    if (isStdinTTY()) throw validation("find needs a file path or piped stdin", ['jev-cli find "<question>" <file>']);
+    if (isStdinTTY()) throw validation("find needs a file path or piped stdin", ['jev-axi find "<question>" <file>']);
     text = readStdinSync();
     label = "stdin";
   } else {

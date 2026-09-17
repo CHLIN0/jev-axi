@@ -20,7 +20,7 @@ import { validation } from "../errors.js";
 import { round } from "../format.js";
 import { estimateCost, formatCost, formatTokens, groupUsage, readUsage, totals, type GroupBy } from "../usage.js";
 
-export const MODELS_HELP = `usage: jev-cli models
+export const MODELS_HELP = `usage: jev-axi models
 List the models available to this API key.
 `;
 
@@ -30,20 +30,20 @@ export async function modelsCommand(args: string[]): Promise<AxiRenderable> {
   const current = resolveModel(p.values["--model"]);
   const rows = models.map((m) => ({ name: m.name, released: m.release_date.slice(0, 10), current: m.name === current ? "yes" : "", description: m.description }));
   if (p.bools["--json"]) return JSON.stringify(models, null, 2);
-  return { models: rows, help: ["Pass --model <name> to any command, or `jev-cli config set model <name>`"] };
+  return { models: rows, help: ["Pass --model <name> to any command, or `jev-axi config set model <name>`"] };
 }
 
-export const USAGE_HELP = `usage: jev-cli usage [--days N] [--by command|day|model] [--json]
+export const USAGE_HELP = `usage: jev-axi usage [--days N] [--by command|day|model] [--json]
 Token usage and estimated spend from the local ledger (the API has no spend endpoint; every call is logged here).
 flags:
   --days <n>           window in days (default 7; 0 = all time)
   --by <group>         command (default), day, model, or project
 notes:
-  Costs assume $${DEFAULT_PRICE.input} per 1M input tokens and free output; override with jev-cli config set price.input / price.output
+  Costs assume $${DEFAULT_PRICE.input} per 1M input tokens and free output; override with jev-axi config set price.input / price.output
   Cached calls are listed separately as saved tokens.
 examples:
-  jev-cli usage
-  jev-cli usage --days 30 --by day
+  jev-axi usage
+  jev-axi usage --days 30 --by day
 `;
 
 export async function usageCommand(args: string[]): Promise<AxiRenderable> {
@@ -59,7 +59,7 @@ export async function usageCommand(args: string[]): Promise<AxiRenderable> {
   const window = days === 0 ? "all time" : `last ${days} day${days === 1 ? "" : "s"}`;
   if (p.bools["--json"]) return JSON.stringify({ window, totals: t, cost, saved, entries }, null, 2);
   if (entries.length === 0) {
-    return { usage: `0 calls recorded in the ${window}`, ledger: paths.usageLedger(), help: ["Run any jev-cli command; every API call is logged locally"] };
+    return { usage: `0 calls recorded in the ${window}`, ledger: paths.usageLedger(), help: ["Run any jev-axi command; every API call is logged locally"] };
   }
   const groups: Record<string, unknown>[] = [...groupUsage(entries, by)].map(([key, list]) => {
     const g = totals(list);
@@ -87,11 +87,11 @@ export async function usageCommand(args: string[]): Promise<AxiRenderable> {
   out["cost"] = `${formatCost(cost)} estimated at $${price.input}/$${price.output} per 1M in/out${saved ? ` (${formatCost(saved)} saved by cache)` : ""}`;
   out[`by_${by}`] = groups;
   const help: string[] = [];
-  help.push(`Run \`jev-cli usage --by ${by === "day" ? "command" : "day"}\` for another view, or \`jev-cli stats\` for lifetime trends`);
+  help.push(`Run \`jev-axi usage --by ${by === "day" ? "command" : "day"}\` for another view, or \`jev-axi stats\` for lifetime trends`);
   return { ...out, help };
 }
 
-export const CONFIG_HELP = `usage: jev-cli config [set <key> <value> | unset <key>]
+export const CONFIG_HELP = `usage: jev-axi config [set <key> <value> | unset <key>]
 Show or change persistent settings in ${paths.configFile()}.
 keys:
   apiKey           TypeSafe API key (env TYPESAFE_API_KEY and ./.env take precedence)
@@ -100,9 +100,9 @@ keys:
   price.output     USD per 1M output tokens (default ${DEFAULT_PRICE.output})
   act, confirm     band thresholds on confidence (default ${DEFAULT_THRESHOLDS.act} / ${DEFAULT_THRESHOLDS.confirm})
 examples:
-  jev-cli config
-  jev-cli config set model jev-preview
-  jev-cli config set price.input 0.10
+  jev-axi config
+  jev-axi config set model jev-preview
+  jev-axi config set price.input 0.10
 `;
 
 export async function configCommand(args: string[]): Promise<AxiRenderable> {
@@ -110,7 +110,7 @@ export async function configCommand(args: string[]): Promise<AxiRenderable> {
   const [action, key, value] = p.positional;
   const config = readConfig();
   if (!action) return showConfig(config);
-  if (action !== "set" && action !== "unset") throw validation(`unknown config action ${JSON.stringify(action)}`, ["jev-cli config set <key> <value>", "jev-cli config unset <key>"]);
+  if (action !== "set" && action !== "unset") throw validation(`unknown config action ${JSON.stringify(action)}`, ["jev-axi config set <key> <value>", "jev-axi config unset <key>"]);
   if (!key) throw validation(`config ${action} needs a key`, [CONFIG_HELP.split("\n").slice(3, 8).join("; ")]);
   if (action === "set" && value === undefined) throw validation(`config set ${key} needs a value`);
   const next = applyConfig(config, key, action === "set" ? value : undefined);
@@ -156,13 +156,13 @@ export function cacheCount(): number {
   return readdirSync(dir).filter((f) => f.endsWith(".json")).length;
 }
 
-export const SETUP_HELP = `usage: jev-cli setup hooks [--project] | jev-cli setup status
-Install or repair agent SessionStart hooks (Claude Code, Codex, OpenCode) so each session starts with jev-cli context.
+export const SETUP_HELP = `usage: jev-axi setup hooks [--project] | jev-axi setup status
+Install or repair agent SessionStart hooks (Claude Code, Codex, OpenCode) so each session starts with jev-axi context.
 flags:
   --project            install into the current repository instead of the user profile
 examples:
-  jev-cli setup hooks
-  jev-cli setup status
+  jev-axi setup hooks
+  jev-axi setup status
 `;
 
 export async function setupCommand(args: string[]): Promise<AxiRenderable> {
@@ -171,13 +171,13 @@ export async function setupCommand(args: string[]): Promise<AxiRenderable> {
   const scope = p.bools["--project"] ? "project" : "user";
   if (action === "hooks") {
     installSessionStartHooks({ scope });
-    return { hooks: { status: "installed", scope, integrations: "Claude Code, Codex, OpenCode" }, help: ["Restart your agent session to receive jev-cli ambient context"] };
+    return { hooks: { status: "installed", scope, integrations: "Claude Code, Codex, OpenCode" }, help: ["Restart your agent session to receive jev-axi ambient context"] };
   }
   if (action === "status") {
     const s = sessionStartHookStatus({ scope });
     return { hooks: { scope, claude: s.claude.installed ? "installed" : "missing", codex: s.codex.installed ? "installed" : "missing", opencode: s.opencode.installed ? "installed" : "missing" } };
   }
-  throw new AxiError("Unknown setup action", "VALIDATION_ERROR", ["Run `jev-cli setup hooks` or `jev-cli setup status`"]);
+  throw new AxiError("Unknown setup action", "VALIDATION_ERROR", ["Run `jev-axi setup hooks` or `jev-axi setup status`"]);
 }
 
 export function todayUsageLine(): string {
