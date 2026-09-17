@@ -29,7 +29,7 @@
   },
   "files": [
     "dist",
-    "skills/jev-axi",
+    "skills",
     "README.md",
     "LICENSE"
   ],

@@ -304,16 +304,25 @@ jev-axi setup git-hooks --remove
 - `jev-axi setup hooks` installs SessionStart hooks for Claude Code, Codex, and
   OpenCode so each session begins with the status view. Add `--project` to
   scope it to the current repository.
-- Install the agent skill so coding agents know when and how to use jev-axi,
-  when not to, and to never send secrets to it:
+- Install the agent skills:
 
   ```sh
-  npx skills add shiftynick/jev-axi --skill jev-axi --agent claude-code   # or --agent '*' for all agents
+  npx skills add shiftynick/jev-axi --skill jev-axi --agent claude-code      # using jev-axi
+  npx skills add shiftynick/jev-axi --skill adopting-jev --agent claude-code # finding uses for Jev
   ```
 
-  The skill is `skills/jev-axi/SKILL.md` plus `references/`: step-by-step workflows, reading
-  results, a guide to adding jev-axi to a repository, writing good questions, and a command
-  reference generated from `--help`.
+  Use `--agent '*'` for all supported agents.
+
+  - **`jev-axi`** teaches agents when and how to use the CLI, when not to, never to send secrets,
+    and how to add jev-axi to a repository. `references/` holds the workflows, how to read
+    results, the repository setup guide, how to write questions, and a command reference
+    generated from `--help`.
+  - **`adopting-jev`** is for the other direction: finding where Jev fits in *your* project. It
+    scans for LLM calls that only classify, keyword rules over user text, moderation and rerank
+    calls, LLM-as-judge harnesses, and manual queues, then designs the questions, picks an
+    integration point, and plans a validation against what you run today. `references/` holds a
+    catalog of measured use cases, scan patterns, question design, limits, integration, and
+    validation.
 
 ## Data and billing
 
