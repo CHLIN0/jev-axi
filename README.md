@@ -225,8 +225,8 @@ against the Agent Skills spec, and `pnpm check:skill` fails in CI when either is
 
 ## Roadmap
 
-See [ROADMAP.md](ROADMAP.md): judgments in CI and git hooks, streaming and labeling modes,
-an MCP server, shared recipes, and calibration tooling.
+See [ROADMAP.md](ROADMAP.md): judgments in CI and git hooks, a pre-exec safety gate,
+streaming and labeling modes, shared recipes, and calibration tooling.
 
 ## Contributing and license
 

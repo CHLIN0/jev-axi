@@ -28,10 +28,10 @@ a judgment, and more use of the probabilities Jev returns.
 
 Run the same checks with nobody asking.
 
-- ⚪ **GitHub Action** (`jev-axi-action`): `diff` review on every pull request, posted as a
+- 🟡 **GitHub Action**: `diff` review on every pull request, posted as a
   check with the risk score; `triage` on failed jobs, posted as a comment with the likely
   cause and the exact log lines.
-- ⚪ **Git hooks** (`jev-axi setup git-hooks`): pre-commit (secrets, debug leftovers,
+- 🟡 **Git hooks** (`jev-axi setup git-hooks`): pre-commit (secrets, debug leftovers,
   work-in-progress markers), commit-msg (does the message describe the diff?), pre-push
   (risky changes such as migrations without a note).
 - 💭 **Pull request routing**: pick reviewers and labels from the diff, a Choice over
@@ -73,9 +73,9 @@ The "many items" strength, pointed at things that pile up.
 
 ## 5. Programmatic surfaces
 
-- 🟡 **MCP server** (`jev-axi mcp`): check, score, pick, rank, and the recipes as MCP tools.
-  Reaches every agent host without a CLI or a skill, and tools in the list get used where a
-  CLI on PATH does not.
+jev-axi stays a CLI, following the [AXI](https://github.com/kunchenguid/axi) principles:
+agents and scripts call it directly, with no MCP server in between.
+
 - ⚪ **Library API**: `import { check, rank } from "jev-axi"` with the same cache, ledger,
   and recipes.
 - 💭 **HTTP sidecar** (`jev-axi serve`): for callers in other languages and for sharing one
@@ -104,7 +104,7 @@ Jev returns probabilities; most tools throw them away.
 ## 8. Safety beyond coding agents
 
 - 🟢 **PreToolUse safety hook** for Claude Code and Codex (`jev-axi setup safety`).
-- ⚪ **Generic pre-exec gate** (`jev-axi guard-exec -- <command>`): the same hazard scoring
+- 🟡 **Generic pre-exec gate** (`jev-axi guard-exec -- <command>`): the same hazard scoring
   for cron jobs, CI scripts, and runbooks.
 - 💭 **Bot middleware**: score inbound messages for injection, abuse, and spam before a bot
   acts on them; the `guard` recipe packaged for that.
@@ -119,8 +119,9 @@ Jev returns probabilities; most tools throw them away.
 
 ## Suggested order
 
-1. GitHub Action: the most visible way to see what jev-axi does.
-2. MCP server: the cheapest way to reach every agent host.
+1. Pre-exec gate and git hooks: safety and judgment with no agent involved, built on the
+   existing safety scoring and recipes.
+2. GitHub Action: the most visible way to see what jev-axi does.
 3. Streaming filter and labeling: from agent accessory to general tool.
 4. Calibrate and escalation: what a wrapper around a general model can't offer as honestly.
 5. Recipe registry, once there are external recipe authors.
