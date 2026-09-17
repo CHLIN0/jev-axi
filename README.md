@@ -223,6 +223,11 @@ AppData paths are honored. `SKILL.md` is hand-written; `pnpm build:skill` regene
 `skills/jev-axi/references/commands.md` from each command's `--help` and validates the skill
 against the Agent Skills spec, and `pnpm check:skill` fails in CI when either is off.
 
+## Roadmap
+
+See [ROADMAP.md](ROADMAP.md): judgments in CI and git hooks, streaming and labeling modes,
+an MCP server, shared recipes, and calibration tooling.
+
 ## Contributing and license
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) and [SECURITY.md](SECURITY.md). MIT licensed.
