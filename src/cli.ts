@@ -52,7 +52,7 @@ examples:
   jev-axi usage --by day
 `;
 
-const HELP: Record<string, string> = {
+export const HELP: Record<string, string> = {
   ask: ASK_HELP,
   pick: PICK_HELP,
   rate: RATE_HELP,

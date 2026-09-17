@@ -14,7 +14,7 @@ export async function homeCommand(): Promise<AxiRenderable> {
     commands: Object.fromEntries(COMMAND_TABLE.map(([need, cmd]) => [/jev-axi (\w+)/.exec(cmd)?.[1] ?? need, `${need}: ${cmd}`])),
   };
   const help: string[] = [];
-  if (!key.key) help.push("Set TYPESAFE_API_KEY (or `jev-axi config set apiKey <key>`) before running questions");
+  if (!key.key) help.push("No API key: skip jev-axi for this task and tell the user in your final answer; they can run `export TYPESAFE_API_KEY=<key>` or `jev-axi config set apiKey <key>`");
   help.push("Output columns: p = probability, confidence 0..1, band = act | confirm | escalate");
   help.push("Piped stdin is the state when no --state is given. Run `jev-axi <command> --help` for flags");
   return { ...out, help };

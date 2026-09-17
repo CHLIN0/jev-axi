@@ -143,7 +143,15 @@ jev-axi config set price.output 0.05
 - `jev-axi setup hooks` installs SessionStart hooks for Claude Code, Codex, and
   OpenCode so each session begins with the status view. Add `--project` to
   scope it to the current repository.
-- `skills/jev-axi/SKILL.md` is an installable skill for on-demand discovery.
+- Install the agent skill so coding agents know when and how to use jev-axi,
+  when not to, and to never send secrets to it:
+
+  ```sh
+  npx skills add shiftynick/jev-axi --skill jev-axi --agent claude-code   # or --agent '*' for all agents
+  ```
+
+  The skill is `skills/jev-axi/SKILL.md` plus `references/` (a command reference
+  generated from `--help`, and a guide to writing good questions).
 
 ## Development
 
@@ -156,8 +164,9 @@ pnpm build
 
 Files: `~/.config/jev-axi/config.json`, `~/.config/jev-axi/stats/usage.jsonl`,
 `~/.config/jev-axi/recipes/`, `~/.cache/jev-axi/`. XDG variables and Windows
-AppData paths are honored. `pnpm build:skill` regenerates `skills/jev-axi/SKILL.md`
-from the command table; `pnpm check:skill` fails when it is stale.
+AppData paths are honored. `SKILL.md` is hand-written; `pnpm build:skill` regenerates
+`skills/jev-axi/references/commands.md` from each command's `--help` and validates the skill
+against the Agent Skills spec, and `pnpm check:skill` fails in CI when either is off.
 
 ## Contributing and license
 

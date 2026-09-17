@@ -1,67 +1,143 @@
 /**
- * Generate skills/jev-axi/SKILL.md from the CLI's own command table so the
- * installable skill never drifts from the CLI. `--check` exits 1 when the
- * committed file is stale (run in CI).
+ * Maintains skills/jev-axi:
+ *
+ * - references/commands.md is GENERATED from the CLI's own command table and each
+ *   command's `--help` text, so it cannot drift from the CLI.
+ * - SKILL.md and references/questions.md are hand-written. This script validates
+ *   them against the Agent Skills spec and Anthropic's authoring guidance
+ *   (name format, description length and voice, body size, working links).
+ *
+ *   pnpm build:skill    regenerate references/commands.md, then validate
+ *   pnpm check:skill    fail if commands.md is stale or validation fails (CI)
  */
-import { readFileSync, writeFileSync } from "node:fs";
-import { DESCRIPTION } from "../src/cli.js";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+import { parse as parseYaml } from "yaml";
+import { HELP } from "../src/cli.js";
 import { COMMAND_TABLE } from "../src/commands/table.js";
 
-const OUT = new URL("../skills/jev-axi/SKILL.md", import.meta.url);
+const SKILL_DIR = join(dirname(fileURLToPath(import.meta.url)), "..", "skills", "jev-axi");
+const SKILL_MD = join(SKILL_DIR, "SKILL.md");
+const COMMANDS_MD = join(SKILL_DIR, "references", "commands.md");
 
-const rows = COMMAND_TABLE.map(([need, cmd]) => `| ${need} | \`${cmd.replace(/\|/g, "\\|")}\` |`).join("\n");
-
-export const SKILL = `---
-name: jev-axi
-description: >
-  Offload snap judgments to TypeSafe's Jev model through the jev-axi CLI instead of
-  reading everything yourself: pick one option, rate on a rubric, check a yes/no,
-  rank or filter many files or lines, semantic-grep a file, review a diff, triage a
-  log, screen untrusted text, or run a saved question set. Use when a task needs a
-  fast, cheap, calibrated decision over text you already have (which files matter,
-  is this log line a real error, does this diff touch auth, is this README safe to
-  act on) before spending your own tokens on it.
----
-
-# jev-axi
-
-${DESCRIPTION}
-
-Jev is not an LLM. It answers typed questions about a state with calibrated
-probabilities in roughly half a second and never generates text. Every answer
-carries a \`band\`: \`act\` (trust it), \`confirm\` (check with the user), \`escalate\`
-(do not act on it). Input tokens cost about $0.042 per million and output tokens
-are free, so one call with many questions is nearly the price of one question.
-
-Run \`npx -y jev-axi\` for live status and \`npx -y jev-axi <command> --help\` for flags.
-Piped stdin is the state when no \`--state\` is given.
-
-| Need | Command |
-| --- | --- |
-${rows}
-
-Ask narrow questions a knowledgeable person could answer in a second, and put
-several independent questions in one \`ask\` call. Start a task with \`files\`, run
-\`triage\` instead of reading a whole failing log, \`guard\` anything fetched from
-the web before acting on it, and \`diff --staged\` before committing.
-`;
-
-const check = process.argv.includes("--check");
-const current = (() => {
-  try {
-    return readFileSync(OUT, "utf8");
-  } catch {
-    return "";
-  }
-})();
-const normalize = (s: string) => s.replace(/\r\n/g, "\n");
-if (check) {
-  if (normalize(current) !== normalize(SKILL)) {
-    console.error("skills/jev-axi/SKILL.md is stale; run `pnpm build:skill`");
-    process.exit(1);
-  }
-  console.log("SKILL.md is up to date");
-} else {
-  writeFileSync(OUT, SKILL);
-  console.log("wrote skills/jev-axi/SKILL.md");
+function commandName(cmd: string): string | undefined {
+  return /jev-axi (\w+)/.exec(cmd)?.[1];
 }
+
+export function renderCommandsReference(): string {
+  const names = COMMAND_TABLE.map(([, cmd]) => commandName(cmd)).filter((n): n is string => !!n);
+  const extra = Object.keys(HELP).filter((n) => !names.includes(n));
+  const all = [...names, ...extra];
+  const toc = all.map((n) => `- [${n}](#${n})`).join("\n");
+  const sections = all
+    .map((n) => {
+      const need = COMMAND_TABLE.find(([, cmd]) => commandName(cmd) === n)?.[0];
+      const help = (HELP[n] ?? "").trimEnd();
+      return `## ${n}\n\n${need ? `${need}.\n\n` : ""}\`\`\`\n${help}\n\`\`\``;
+    })
+    .join("\n\n");
+  return `# jev-axi command reference
+
+Generated from \`jev-axi <command> --help\` by scripts/build-skill.ts. Do not edit by hand.
+
+Global flags accepted by every command: \`--json\` (machine-readable output), \`--full\`
+(no truncation, full distributions), \`--model <name>\`, \`--no-cache\`, \`--act <p>\` and
+\`--confirm <p>\` (band thresholds), \`--help\`.
+
+## Contents
+
+${toc}
+
+${sections}
+`;
+}
+
+interface Problem {
+  file: string;
+  message: string;
+}
+
+export function validateSkill(skillMd = readFileSync(SKILL_MD, "utf8"), skillDir = SKILL_DIR): Problem[] {
+  const problems: Problem[] = [];
+  const add = (message: string, file = "SKILL.md") => problems.push({ file, message });
+
+  const fm = /^---\n([\s\S]*?)\n---\n([\s\S]*)$/.exec(skillMd.replace(/\r\n/g, "\n"));
+  if (!fm) {
+    add("missing YAML frontmatter delimited by --- lines");
+    return problems;
+  }
+  let meta: Record<string, unknown>;
+  try {
+    meta = (parseYaml(fm[1]!) ?? {}) as Record<string, unknown>;
+  } catch (e) {
+    add(`frontmatter is not valid YAML: ${(e as Error).message}`);
+    return problems;
+  }
+  const body = fm[2]!;
+
+  const name = meta["name"];
+  if (typeof name !== "string" || name.length === 0) add("name is required");
+  else {
+    if (name.length > 64) add(`name is ${name.length} chars; max 64`);
+    if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(name)) add("name must be lowercase letters, numbers, and single hyphens, not starting or ending with a hyphen");
+    if (/anthropic|claude/.test(name)) add("name must not contain reserved words 'anthropic' or 'claude'");
+    const dirName = skillDir.replace(/\/+$/, "").split(/[\\/]/).pop();
+    if (name !== dirName) add(`name "${name}" must match its directory "${dirName}"`);
+  }
+
+  const description = meta["description"];
+  if (typeof description !== "string" || description.trim().length === 0) add("description is required");
+  else {
+    if (description.length > 1024) add(`description is ${description.length} chars; max 1024`);
+    if (/<\/?[a-zA-Z][^>]*>/.test(description)) add("description must not contain XML tags");
+    if (/^\s*(I|I'm|You|We)\b/.test(description)) add("description should be written in third person (e.g. 'Ranks files...'), not first or second person");
+    if (!/\bUse (when|before|for|whenever)\b/i.test(description)) add("description should say when to use the skill (e.g. 'Use when ...')");
+  }
+
+  const compatibility = meta["compatibility"];
+  if (compatibility !== undefined && (typeof compatibility !== "string" || compatibility.length > 500)) add("compatibility must be a string of at most 500 chars");
+
+  const known = new Set(["name", "description", "license", "compatibility", "metadata", "allowed-tools"]);
+  for (const key of Object.keys(meta)) if (!known.has(key)) add(`unknown frontmatter field "${key}"`);
+
+  const lines = body.split("\n").length;
+  if (lines > 500) add(`body is ${lines} lines; keep SKILL.md under 500 and move detail to references/`);
+
+  for (const m of body.matchAll(/\]\(([^)#\s]+)(#[^)]*)?\)/g)) {
+    const target = m[1]!;
+    if (/^[a-z]+:/i.test(target)) continue; // external URL
+    if (target.includes("\\")) add(`link "${target}" uses backslashes; use forward slashes`);
+    if (target.split("/").length > 2) add(`link "${target}" is nested more than one level deep`);
+    if (!existsSync(join(skillDir, target))) add(`link target "${target}" does not exist`);
+  }
+  return problems;
+}
+
+function main(): void {
+  const check = process.argv.includes("--check");
+  const expected = renderCommandsReference();
+  const normalize = (s: string) => s.replace(/\r\n/g, "\n");
+  let failed = false;
+
+  if (check) {
+    const current = existsSync(COMMANDS_MD) ? readFileSync(COMMANDS_MD, "utf8") : "";
+    if (normalize(current) !== normalize(expected)) {
+      console.error("skills/jev-axi/references/commands.md is stale; run `pnpm build:skill`");
+      failed = true;
+    }
+  } else {
+    mkdirSync(dirname(COMMANDS_MD), { recursive: true });
+    writeFileSync(COMMANDS_MD, expected);
+    console.log("wrote skills/jev-axi/references/commands.md");
+  }
+
+  const problems = validateSkill();
+  for (const p of problems) console.error(`skills/jev-axi/${p.file}: ${p.message}`);
+  if (problems.length) failed = true;
+  else console.log("skill is valid");
+
+  if (failed) process.exit(1);
+}
+
+if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) main();

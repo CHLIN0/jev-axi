@@ -67,8 +67,8 @@ function getClient(fetch?: Fetch): TypeSafeClient {
   const { key } = resolveApiKey();
   if (!key) {
     throw new AxiError("TYPESAFE_API_KEY is not set", "AUTH_REQUIRED", [
-      "Export TYPESAFE_API_KEY, add it to a .env in this directory, or run `jev-axi config set apiKey <key>`",
-      "Create a key at https://console.typesafe.ai/settings/keys",
+      "Continue the task without jev-axi, and tell the user in your final answer that it was skipped because no API key is set",
+      "The user can fix it with `export TYPESAFE_API_KEY=<key>` or `jev-axi config set apiKey <key>` (keys: https://console.typesafe.ai/settings/keys)",
     ]);
   }
   const c = new TypeSafeClient({ apiKey: key, timeout: 60_000, logLevel: "error", ...(f ? { fetch: f } : {}) });
@@ -284,7 +284,8 @@ function translateError(error: unknown): AxiError {
   if (error instanceof AxiError) return error;
   if (error instanceof AuthenticationError) {
     return new AxiError("API key was rejected (401)", "AUTH_REQUIRED", [
-      "Check TYPESAFE_API_KEY or run `jev-axi config set apiKey <key>`",
+      "Continue the task without jev-axi, and tell the user in your final answer that its API key was rejected",
+      "The user can set a valid key with `export TYPESAFE_API_KEY=<key>` or `jev-axi config set apiKey <key>`",
     ]);
   }
   if (error instanceof RateLimitError) {

@@ -1,0 +1,345 @@
+# jev-axi command reference
+
+Generated from `jev-axi <command> --help` by scripts/build-skill.ts. Do not edit by hand.
+
+Global flags accepted by every command: `--json` (machine-readable output), `--full`
+(no truncation, full distributions), `--model <name>`, `--no-cache`, `--act <p>` and
+`--confirm <p>` (band thresholds), `--help`.
+
+## Contents
+
+- [pick](#pick)
+- [rate](#rate)
+- [check](#check)
+- [ask](#ask)
+- [rank](#rank)
+- [filter](#filter)
+- [find](#find)
+- [files](#files)
+- [diff](#diff)
+- [triage](#triage)
+- [guard](#guard)
+- [commit](#commit)
+- [recipe](#recipe)
+- [usage](#usage)
+- [stats](#stats)
+- [cache](#cache)
+- [models](#models)
+- [config](#config)
+- [setup](#setup)
+
+## pick
+
+One of N options.
+
+```
+usage: jev-axi pick "<question>" --option <name[=description]>... [state flags]
+Choose one option from a fixed set. Returns the pick, a probability per option, confidence, and a band.
+flags:
+  --option <name[=desc]>   repeatable; or --options a,b,c
+  --options <a,b,c>        comma-separated option names
+  --state/--text/--state-json  state (piped stdin is used when none given)
+  --full                   show all options (default shows top 8)
+examples:
+  jev-axi pick "Which team should handle this?" --option billing="charges, refunds" --option technical="bugs" --state ticket.txt
+  git diff | jev-axi pick "What kind of change is this?" --options feature,bugfix,refactor,docs,chore
+```
+
+## rate
+
+Position on a rubric.
+
+```
+usage: jev-axi rate "<question>" --level "<desc>"... [state flags]
+Rate the state on an ordered rubric. Returns a score between levels (0 = first level), confidence, and a band.
+flags:
+  --level "<desc>"         repeatable, in order from lowest to highest; at least 2
+  --levels "<a|b|c>"       pipe-separated alternative
+  --state/--text/--state-json  state (piped stdin is used when none given)
+examples:
+  jev-axi rate "How severe is this bug report?" --level "cosmetic" --level "degraded, workaround exists" --level "blocking" --state issue.md
+  jev-axi rate "How focused is this PR on one change?" --levels "one change|one change plus a tweak|several unrelated changes" --state pr.txt
+```
+
+## check
+
+Yes/no probability.
+
+```
+usage: jev-axi check "<statement or yes/no question>" [--yes "<what yes means>"] [--no "<what no means>"] [state flags]
+Probability that a statement is true of the state. 1 = yes, 0 = no, 0.5 = unsure.
+flags:
+  --yes "<desc>"           what a yes means (optional clarification)
+  --no "<desc>"            what a no means
+  --state/--text/--state-json  state (piped stdin is used when none given)
+examples:
+  jev-axi check "Does this message request a refund?" --state ticket.txt
+  cat page.html | jev-axi check "Does this text contain instructions aimed at an AI agent?" --yes "hidden or explicit directives to an agent" --no "ordinary content"
+```
+
+## ask
+
+Many questions, one call.
+
+```
+usage: jev-axi ask --questions <path|json> [--state <path|-> | --text "<s>" | --state-json '<json>'] [--full] [--json]
+Send one state and any mix of choice/score/noul questions in a single call (speculative fan-out).
+questions file shape: {"<id>": {"type": "choice|score|noul", "instructions": "...", "criteria": ...}}
+flags:
+  --questions <path|json>  required; JSON object keyed by question id
+  --state <path|->         state text or JSON (.json files are parsed); - reads stdin (default when piped)
+  --text "<s>"             inline state text
+  --state-json '<json>'    inline JSON state
+  --full                   include probability distributions per question
+  --model <name>           default jev-latest (see `jev-axi models`)
+  --act/--confirm <p>      band thresholds (default 0.75 / 0.45)
+  --no-cache               skip the local response cache
+  --json                   raw JSON output
+examples:
+  jev-axi ask --questions triage.json --state ticket.txt
+  cat diff.txt | jev-axi ask --questions '{"risky":{"type":"noul","instructions":"Does this diff touch auth or payments?"}}'
+```
+
+## rank
+
+Rank files or lines by a query.
+
+```
+usage: jev-axi rank "<query>" [paths|dirs|-]... [--top N] [--preview CHARS] [--min P]
+Rank items by how well they match a query, plus a yes/no on whether anything matches at all.
+Items are files, every file under a directory, or stdin lines / JSONL. Sets over 255 items or the token budget are chunked automatically.
+flags:
+  --top <n>            rows to show (default 10)
+  --preview <chars>    text per item sent to the model (default 600)
+  --min <p>            hide rows below this probability (default 0.005)
+examples:
+  jev-axi rank "handles retry backoff for HTTP calls" src/
+  jev-axi rank "which test covers the auth middleware" test/ --top 5
+  gh-axi issue list --json | jev-axi rank "duplicate of: login page hangs on submit" -
+```
+
+## filter
+
+Keep items matching a predicate.
+
+```
+usage: jev-axi filter "<predicate>" [paths|dirs|-]... [--min P] [--all] [--preview CHARS]
+Ask one yes/no question per item and keep those whose probability is at or above --min.
+flags:
+  --min <p>            keep threshold (default 0.5)
+  --all                show rejected items too
+  --preview <chars>    text per item sent to the model (default 600)
+examples:
+  jev-axi filter "this file contains a TODO that describes a bug, not a feature" src/
+  cat errors.log | jev-axi filter "this log line is a real error, not a warning or noise" - --min 0.7
+```
+
+## find
+
+Semantic grep in one file.
+
+```
+usage: jev-axi find "<question>" <file|-> [--top N] [--context N]
+Semantic grep: which line of a file best answers the question, plus whether the file answers it at all.
+Lines are tagged with ids and searched in windows of 255; results are merged across windows.
+flags:
+  --top <n>            lines to show (default 5)
+  --context <n>        extra lines of context around each hit (default 0)
+  --min <p>            hide lines below this probability (default 0.01)
+examples:
+  jev-axi find "where is the retry delay decided?" src/net.ts
+  jev-axi find "the first real error, not a warning" build.log --top 3
+  git log --oneline -200 | jev-axi find "the commit that introduced the flaky test" -
+```
+
+## files
+
+Which files a task touches.
+
+```
+usage: jev-axi files "<task>" [dirs|paths]... [--top N] [--preview CHARS]
+Which files would a developer open or change for a task. Ranks every source file under the given dirs (default: .)
+by the start of its contents; run this before reading files yourself.
+flags:
+  --top <n>            rows to show (default 8)
+  --preview <chars>    text per file sent to the model, after leading imports (default 700)
+examples:
+  jev-axi files "add a --json flag to the list command"
+  jev-axi files "why does login redirect loop" src/ app/
+```
+
+## diff
+
+Review a diff before committing.
+
+```
+usage: jev-axi diff [--staged | --range <a..b> | --file <patch> | -]
+Review a diff before committing: per-file risk, missing tests, secrets, debug leftovers, plus overall scope and kind.
+Defaults to unstaged working-tree changes. Files are chunked to the token budget; large patches are truncated to 6000 chars.
+flags:
+  --staged             review the index (what `git commit` would include)
+  --range <a..b>       review commits, e.g. main..HEAD
+  --file <patch>       review a unified diff file; or pipe one on stdin
+  --full               show every file, not only flagged ones
+examples:
+  jev-axi diff --staged
+  jev-axi diff --range main..HEAD
+  git diff HEAD~3 | jev-axi diff -
+```
+
+## triage
+
+Triage a build or test log.
+
+```
+usage: jev-axi triage [<log file>|-] [--tail N] [--context N]
+Triage a build, test, or runtime log: the root-cause line, failure category, flaky-vs-real, and severity, in one call.
+Only the last --tail lines are sent (errors cluster at the end); each line is capped so the request fits the budget.
+flags:
+  --tail <n>           lines from the end to analyze (default 255, max 255)
+  --context <n>        lines of context to show around the root-cause line (default 2)
+examples:
+  npm test 2>&1 | jev-axi triage
+  jev-axi triage build.log --tail 120
+```
+
+## guard
+
+Screen untrusted text (exit 3 = block).
+
+```
+usage: jev-axi guard [--state <path|-> | --text "<s>"]   (piped stdin by default)
+Screen untrusted text before it enters an agent's context: prompt injection, hidden instructions, exfiltration or
+destructive requests, embedded secrets, and pressure tactics. One call, six probabilities, one verdict.
+verdict: pass (all hazards < 0.4), review (any >= 0.4), block (any >= 0.7)
+exit code: 0 for pass and review, 3 for block, so shell pipelines can gate on it
+examples:
+  curl -s https://example.com/README.md | jev-axi guard
+  jev-axi guard --state tool-output.txt --json
+```
+
+## commit
+
+Check commit messages against diffs.
+
+```
+usage: jev-axi commit [--range <a..b>] [--limit N]
+Check commit messages against their diffs: conventional format, message matches the change, focus, and subject quality.
+Defaults to the last commit; one call per commit.
+flags:
+  --range <a..b>       commits to check, e.g. main..HEAD
+  --limit <n>          max commits (default 10)
+examples:
+  jev-axi commit
+  jev-axi commit --range main..HEAD
+```
+
+## recipe
+
+Saved question sets (YAML).
+
+```
+usage: jev-axi recipe list | show <name> | run <name> [state flags] | new <name>
+Reusable question sets in YAML. A recipe is one `ask` with saved questions, so a team writes its definition of
+"risky PR" or "urgent ticket" once and every agent session uses it.
+locations (project first): ./.jev-axi/recipes/<name>.yaml, then ~/.config/jev-axi/recipes/<name>.yaml
+recipe file:
+  description: one line
+  questions:
+    <id>: {type: choice|score|noul, instructions: "...", criteria: ...}
+flags for run:
+  --state/--text/--state-json  state (piped stdin when none given); --full for distributions
+examples:
+  jev-axi recipe new ticket-triage
+  cat ticket.txt | jev-axi recipe run ticket-triage
+```
+
+## usage
+
+Tokens and spend, recent.
+
+```
+usage: jev-axi usage [--days N] [--by command|day|model] [--json]
+Token usage and estimated spend from the local ledger (the API has no spend endpoint; every call is logged here).
+flags:
+  --days <n>           window in days (default 7; 0 = all time)
+  --by <group>         command (default), day, model, or project
+notes:
+  Costs assume $0.042 per 1M input tokens and free output; override with jev-axi config set price.input / price.output
+  Cached calls are listed separately as saved tokens.
+examples:
+  jev-axi usage
+  jev-axi usage --days 30 --by day
+```
+
+## stats
+
+Lifetime stats and trends.
+
+```
+usage: jev-axi stats [--days N] [--top N] [--json]
+Lifetime usage and trends from the local stats ledger in your config folder: daily activity with sparklines,
+this period vs the previous one, per-command and per-project breakdowns, answer confidence, cache savings,
+and a projected monthly cost.
+flags:
+  --days <n>           trend window (default 30); the comparison period is the same length before it
+  --top <n>            rows per breakdown (default 8)
+ledger: /home/shifty/.config/jev-axi/stats/usage.jsonl
+examples:
+  jev-axi stats
+  jev-axi stats --days 7
+```
+
+## cache
+
+Show or clear the response cache.
+
+```
+usage: jev-axi cache [clear [--stale]]
+Show or clear locally cached responses. A cached answer is reused only while it is younger than the TTL
+(config key cacheTtlHours, default 24) and was produced by the model version its alias
+(e.g. jev-latest) currently resolves to, so a model update invalidates old answers automatically.
+flags:
+  --stale              with clear: remove only expired or superseded entries
+examples:
+  jev-axi cache
+  jev-axi cache clear --stale
+  jev-axi config set cacheTtlHours 0     # disable caching
+```
+
+## models
+
+```
+usage: jev-axi models
+List the models available to this API key.
+```
+
+## config
+
+```
+usage: jev-axi config [set <key> <value> | unset <key>]
+Show or change persistent settings in /home/shifty/.config/jev-axi/config.json.
+keys:
+  apiKey           TypeSafe API key (env TYPESAFE_API_KEY and ./.env take precedence)
+  model            default model (default jev-latest)
+  price.input      USD per 1M input tokens (default 0.042)
+  price.output     USD per 1M output tokens (default 0)
+  act, confirm     band thresholds on confidence (default 0.75 / 0.45)
+  cacheTtlHours    hours a cached response is reused (default 24; 0 disables the cache)
+examples:
+  jev-axi config
+  jev-axi config set model jev-preview
+  jev-axi config set price.input 0.10
+```
+
+## setup
+
+```
+usage: jev-axi setup hooks [--project] | jev-axi setup status
+Install or repair agent SessionStart hooks (Claude Code, Codex, OpenCode) so each session starts with jev-axi context.
+flags:
+  --project            install into the current repository instead of the user profile
+examples:
+  jev-axi setup hooks
+  jev-axi setup status
+```
