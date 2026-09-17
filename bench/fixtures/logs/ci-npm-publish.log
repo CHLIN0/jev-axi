@@ -1,0 +1,315 @@
+﻿2026-09-17T00:58:03.6791958Z Current runner version: '2.337.0'
+Hosted Compute Agent
+Version: 20260828.587
+Commit: abac92662cab4cc7352de4f9f9d2e2419aad9c29
+Build Date: 2026-08-28T16:44:25Z
+Worker ID: {758af59f-ed79-4565-961c-d0f0c4a1d991}
+Azure Region: centralus
+Ubuntu
+24.04.5
+LTS
+Image: ubuntu-24.04
+Version: 20260907.300.1
+Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20260907.300/images/ubuntu/Ubuntu2404-Readme.md
+Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20260907.300
+Contents: read
+Metadata: read
+Secret source: Actions
+Cache mode: write
+Prepare workflow directory
+Prepare all required actions
+Getting action download info
+Download action repository 'actions/checkout@v7' (SHA:3d3c42e5aac5ba805825da76410c181273ba90b1)
+Download action repository 'pnpm/action-setup@v6' (SHA:0977fd99725f1db4007ccb2928dbb4e90d06cc86)
+Download action repository 'actions/setup-node@v7' (SHA:820762786026740c76f36085b0efc47a31fe5020)
+Complete job name: npm
+with:
+  repository: shiftynick/jev-axi
+  token: ***
+  ssh-strict: true
+  ssh-user: git
+  persist-credentials: true
+  clean: true
+  sparse-checkout-cone-mode: true
+  fetch-depth: 1
+  fetch-tags: false
+  show-progress: true
+  lfs: false
+  submodules: false
+  set-safe-directory: true
+  allow-unsafe-pr-checkout: false
+Syncing repository: shiftynick/jev-axi
+Working directory is '/home/runner/work/jev-axi/jev-axi'
+[command]/usr/bin/git version
+git version 2.55.0
+Temporarily overriding HOME='/home/runner/work/_temp/ff240c15-707f-4bc5-aa9f-78f8c16ee739' before making global git config changes
+Adding repository directory to the temporary git global config as a safe directory
+[command]/usr/bin/git config --global --add safe.directory /home/runner/work/jev-axi/jev-axi
+Deleting the contents of '/home/runner/work/jev-axi/jev-axi'
+[command]/usr/bin/git init /home/runner/work/jev-axi/jev-axi
+hint: Using 'master' as the name for the initial branch. This default branch name
+hint: will change to "main" in Git 3.0. To configure the initial branch name
+hint: to use in all of your new repositories, which will suppress this warning,
+hint: call:
+hint:
+hint: 	git config --global init.defaultBranch <name>
+hint:
+hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+hint: 'development'. The just-created branch can be renamed via this command:
+hint:
+hint: 	git branch -m <name>
+hint:
+hint: Disable this message with "git config set advice.defaultBranchName false"
+Initialized empty Git repository in /home/runner/work/jev-axi/jev-axi/.git/
+[command]/usr/bin/git remote add origin https://github.com/shiftynick/jev-axi
+[command]/usr/bin/git config --local gc.auto 0
+Removing SSH command configuration
+[command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+[command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+Removing HTTP extra header
+[command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+[command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+Removing includeIf entries pointing to credentials config files
+[command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+[command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+[command]/usr/bin/git config --file /home/runner/work/_temp/git-credentials-54981783-efec-4cfe-894a-f5a6a2cb6996.config http.https://github.com/.extraheader AUTHORIZATION: basic ***
+[command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/jev-axi/jev-axi/.git.path /home/runner/work/_temp/git-credentials-54981783-efec-4cfe-894a-f5a6a2cb6996.config
+[command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/jev-axi/jev-axi/.git/worktrees/*.path /home/runner/work/_temp/git-credentials-54981783-efec-4cfe-894a-f5a6a2cb6996.config
+[command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git.path /github/runner_temp/git-credentials-54981783-efec-4cfe-894a-f5a6a2cb6996.config
+[command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git/worktrees/*.path /github/runner_temp/git-credentials-54981783-efec-4cfe-894a-f5a6a2cb6996.config
+[command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +refs/tags/v0.2.0:refs/tags/v0.2.0
+From https://github.com/shiftynick/jev-axi
+ * [new tag]         v0.2.0     -> v0.2.0
+[command]/usr/bin/git tag --list v0.2.0
+v0.2.0
+[command]/usr/bin/git rev-parse refs/tags/v0.2.0^{commit}
+4ca9f56e3e302d4ea394383dbd992d05ac7fa344
+[command]/usr/bin/git sparse-checkout disable
+[command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+[command]/usr/bin/git checkout --progress --force refs/tags/v0.2.0
+Note: switching to 'refs/tags/v0.2.0'.
+
+You are in 'detached HEAD' state. You can look around, make experimental
+changes and commit them, and you can discard any commits you make in this
+state without impacting any branches by switching back to a branch.
+
+If you want to create a new branch to retain commits you create, you may
+do so (now or later) by using -c with the switch command. Example:
+
+  git switch -c <new-branch-name>
+
+Or undo this operation with:
+
+  git switch -
+
+Turn off this advice by setting config variable advice.detachedHead to false
+
+HEAD is now at 4ca9f56 build!: drop Node 20 support (#8)
+[command]/usr/bin/git log -1 --format=%H
+4ca9f56e3e302d4ea394383dbd992d05ac7fa344
+with:
+  version: 10
+  dest: ~/setup-pnpm
+  run_install: null
+  cache: false
+  cache_dependency_path: pnpm-lock.yaml
+  package_json_file: package.json
+  standalone: false
+
+added 1 package, and audited 2 packages in 3s
+
+1 package is looking for funding
+  run `npm fund` for details
+
+found 0 vulnerabilities
+Checking for updates...
+Switching pnpm from v11.19.0 to v10.34.5...
+.../v11/8cc-1a0acdf0a1a-4f337a6a89e267e7 | Progress: resolved 1, reused 0, downloaded 0, added 0
+.../v11/8cc-1a0acdf0a1a-4f337a6a89e267e7 |   +1 +
+.../v11/8cc-1a0acdf0a1a-4f337a6a89e267e7 | Progress: resolved 1, reused 0, downloaded 1, added 1, done
+[WARN] Detected a pnpm v10 installation layout at PNPM_HOME. The pnpm shims at PNPM_HOME have been refreshed so the new version is active, but pnpm v11 expects bins in PNPM_HOME/bin. Run "pnpm setup" to migrate your PATH to the v11 layout.
+Successfully updated pnpm to v10.34.5
+Installation Completed!
+with:
+  node-version: 22
+  cache: pnpm
+  check-latest: false
+  token: ***
+  package-manager-cache: true
+env:
+  PNPM_HOME: /home/runner/setup-pnpm/node_modules/.bin
+Found in cache @ /opt/hostedtoolcache/node/22.23.2/x64
+node: v22.23.2
+npm: 10.9.8
+yarn: 1.22.22
+[command]/home/runner/setup-pnpm/node_modules/.bin/bin/pnpm store path --silent
+/home/runner/setup-pnpm/node_modules/.bin/store/v10
+Cache hit for: node-cache-Linux-x64-pnpm-3096c240847766220605b0fd01db7b37e290c5a927c5fc13d7d8a7d1b2aa13f7
+Received 19983829 of 19983829 (100.0%), 27.7 MBs/sec
+Cache Size: ~19 MB (19983829 B)
+[command]/usr/bin/tar -xf /home/runner/work/_temp/bb5d846e-d64e-4f81-b612-5ab4cee14d5d/cache.tzst -P -C /home/runner/work/jev-axi/jev-axi --use-compress-program unzstd
+Cache restored successfully
+Cache restored from key: node-cache-Linux-x64-pnpm-3096c240847766220605b0fd01db7b37e290c5a927c5fc13d7d8a7d1b2aa13f7
+[36;1mnpm install -g npm@latest[0m
+shell: /usr/bin/bash -e {0}
+env:
+  PNPM_HOME: /home/runner/setup-pnpm/node_modules/.bin
+
+removed 65 packages, and changed 92 packages in 6s
+
+15 packages are looking for funding
+  run `npm fund` for details
+[36;1mpnpm install --frozen-lockfile[0m
+shell: /usr/bin/bash -e {0}
+env:
+  PNPM_HOME: /home/runner/setup-pnpm/node_modules/.bin
+Lockfile is up to date, resolution step is skipped
+Progress: resolved 1, reused 0, downloaded 0, added 0
+Packages: +45
++++++++++++++++++++++++++++++++++++++++++++++
+Progress: resolved 45, reused 45, downloaded 0, added 45, done
+.../esbuild@0.28.2/node_modules/esbuild postinstall$ node install.js
+.../esbuild@0.28.2/node_modules/esbuild postinstall: Done
+
+dependencies:
++ @toon-format/toon 4.1.1
++ @typesafe-ai/sdk 0.6.0
++ axi-sdk-js 0.1.12
++ yaml 2.9.1
+
+devDependencies:
++ @types/node 22.20.3
++ tsx 4.23.13
++ typescript 7.0.2
++ vitest 5.0.1
+
+Done in 724ms using pnpm v10.34.5
+[36;1mpnpm lint[0m
+shell: /usr/bin/bash -e {0}
+env:
+  PNPM_HOME: /home/runner/setup-pnpm/node_modules/.bin
+
+> jev-axi@0.1.1 lint /home/runner/work/jev-axi/jev-axi
+> tsc --noEmit
+
+[36;1mpnpm test[0m
+shell: /usr/bin/bash -e {0}
+env:
+  PNPM_HOME: /home/runner/setup-pnpm/node_modules/.bin
+
+> jev-axi@0.1.1 test /home/runner/work/jev-axi/jev-axi
+> vitest run
+
+
+[1m[30m[46m RUN [49m[39m[22m [36mv5.0.1 [39m[90m/home/runner/work/jev-axi/jev-axi[39m
+
+ [32m✓[39m test/units.test.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 14[2mms[22m[39m
+ [32m✓[39m test/stats.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 20[2mms[22m[39m
+ [32m✓[39m test/cli.test.ts [2m([22m[2m10 tests[22m[2m)[22m[32m 85[2mms[22m[39m
+ [32m✓[39m test/recipes.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 89[2mms[22m[39m
+ [32m✓[39m test/args.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m✓[39m test/git.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m test/migrate.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 4[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m7 passed[39m[22m[90m (7)[39m
+[2m      Tests [22m [1m[32m44 passed[39m[22m[90m (44)[39m
+[2m   Start at [22m 00:58:27
+[2m   Duration [22m 916ms[2m (transform 56%, import 28%, tests 14%, worker 2%)[22m
+
+[36;1mpnpm build[0m
+shell: /usr/bin/bash -e {0}
+env:
+  PNPM_HOME: /home/runner/setup-pnpm/node_modules/.bin
+
+> jev-axi@0.1.1 build /home/runner/work/jev-axi/jev-axi
+> tsc
+
+[36;1mnpm publish --access public --provenance[0m
+shell: /usr/bin/bash -e {0}
+env:
+  PNPM_HOME: /home/runner/setup-pnpm/node_modules/.bin
+npm notice run jev-axi@0.1.1 prepublishOnly
+npm notice run npm run build
+npm notice run jev-axi@0.1.1 build
+npm notice run tsc
+npm notice
+npm notice 📦  jev-axi@0.1.1
+npm notice Tarball Contents
+npm notice 1.1kB LICENSE
+npm notice 6.8kB README.md
+npm notice 289B dist/bin/jev-axi.js
+npm notice 402B dist/bin/jev-axi.js.map
+npm notice 3.4kB dist/src/args.js
+npm notice 3.8kB dist/src/args.js.map
+npm notice 550B dist/src/bands.js
+npm notice 559B dist/src/bands.js.map
+npm notice 4.5kB dist/src/cli.js
+npm notice 3.5kB dist/src/cli.js.map
+npm notice 6.7kB dist/src/client.js
+npm notice 6.4kB dist/src/client.js.map
+npm notice 2.7kB dist/src/commands/ask.js
+npm notice 1.9kB dist/src/commands/ask.js.map
+npm notice 7.1kB dist/src/commands/batch.js
+npm notice 7.0kB dist/src/commands/batch.js.map
+npm notice 2.9kB dist/src/commands/commit.js
+npm notice 2.9kB dist/src/commands/commit.js.map
+npm notice 1.9kB dist/src/commands/common.js
+npm notice 2.5kB dist/src/commands/common.js.map
+npm notice 6.6kB dist/src/commands/diff.js
+npm notice 7.1kB dist/src/commands/diff.js.map
+npm notice 3.3kB dist/src/commands/files.js
+npm notice 3.7kB dist/src/commands/files.js.map
+npm notice 5.7kB dist/src/commands/find.js
+npm notice 6.3kB dist/src/commands/find.js.map
+npm notice 1.9kB dist/src/commands/guard.js
+npm notice 1.8kB dist/src/commands/guard.js.map
+npm notice 1.0kB dist/src/commands/home.js
+npm notice 1.1kB dist/src/commands/home.js.map
+npm notice 9.3kB dist/src/commands/meta.js
+npm notice 9.2kB dist/src/commands/meta.js.map
+npm notice 6.2kB dist/src/commands/primitives.js
+npm notice 5.6kB dist/src/commands/primitives.js.map
+npm notice 6.3kB dist/src/commands/recipe.js
+npm notice 6.0kB dist/src/commands/recipe.js.map
+npm notice 6.4kB dist/src/commands/stats.js
+npm notice 7.7kB dist/src/commands/stats.js.map
+npm notice 1.3kB dist/src/commands/table.js
+npm notice 696B dist/src/commands/table.js.map
+npm notice 5.0kB dist/src/commands/triage.js
+npm notice 5.6kB dist/src/commands/triage.js.map
+npm notice 4.4kB dist/src/config.js
+npm notice 4.8kB dist/src/config.js.map
+npm notice 255B dist/src/errors.js
+npm notice 326B dist/src/errors.js.map
+npm notice 2.8kB dist/src/format.js
+npm notice 4.1kB dist/src/format.js.map
+npm notice 3.7kB dist/src/git.js
+npm notice 4.2kB dist/src/git.js.map
+npm notice 6.3kB dist/src/items.js
+npm notice 6.4kB dist/src/items.js.map
+npm notice 10.6kB dist/src/recipes/questions.js
+npm notice 4.5kB dist/src/recipes/questions.js.map
+npm notice 3.2kB dist/src/state.js
+npm notice 2.9kB dist/src/state.js.map
+npm notice 235B dist/src/stdin.js
+npm notice 330B dist/src/stdin.js.map
+npm notice 5.2kB dist/src/usage.js
+npm notice 6.5kB dist/src/usage.js.map
+npm notice 143B dist/src/version.js
+npm notice 161B dist/src/version.js.map
+npm notice 1.5kB package.json
+npm notice 2.8kB skills/jev-axi/SKILL.md
+npm notice Tarball Details
+npm notice name: jev-axi
+npm notice version: 0.1.1
+npm notice filename: jev-axi-0.1.1.tgz
+npm notice package size: 61.8 kB
+npm notice unpacked size: 250.0 kB
+npm notice shasum: 931a93dab07627bcd2151b3d4a40e10970ebbfe7
+npm notice integrity: sha512-l8XpVaR5SQO/O[...]6kqSgCe/8c+3g==
+npm notice total files: 64
+npm notice
+npm notice npm tokens that bypass 2FA are being restricted for account changes and direct publishing. Learn how to prepare: https://gh.io/npm-gat-bypass2fa-deprecation
+npm error You cannot publish over the previously published versions: 0.1.1.
+npm error A complete log of this run can be found in: /home/runner/.npm/_logs/2026-09-17T00_58_29_289Z-debug-0.log
+##[error]Process completed with exit code 1.

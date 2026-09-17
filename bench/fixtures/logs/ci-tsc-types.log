@@ -1,0 +1,204 @@
+﻿2026-09-17T00:41:16.4562294Z Current runner version: '2.337.0'
+Hosted Compute Agent
+Version: 20260828.587
+Commit: abac92662cab4cc7352de4f9f9d2e2419aad9c29
+Build Date: 2026-08-28T16:44:25Z
+Worker ID: {2e442cc7-c48b-4116-b28c-81c0915474ef}
+Azure Region: westus3
+Microsoft Windows Server 2025
+10.0.26100
+Datacenter
+Image: windows-2025-vs2026
+Version: 20260907.229.1
+Included Software: https://github.com/actions/runner-images/blob/win25-vs2026/20260907.229/images/windows/Windows2025-VS2026-Readme.md
+Image Release: https://github.com/actions/runner-images/releases/tag/win25-vs2026%2F20260907.229
+Contents: read
+Metadata: read
+Packages: read
+Secret source: Dependabot
+Cache mode: write
+Prepare workflow directory
+Prepare all required actions
+Getting action download info
+Download action repository 'actions/checkout@v5' (SHA:fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09)
+Download action repository 'pnpm/action-setup@v4' (SHA:b906affcce14559ad1aafd4ab0e942779e9f58b1)
+Download action repository 'actions/setup-node@v5' (SHA:a0853c24544627f65ddf259abe73b1d18a591444)
+Complete job name: test (windows-latest, 20)
+with:
+  repository: shiftynick/jev-axi
+  token: ***
+  ssh-strict: true
+  ssh-user: git
+  persist-credentials: true
+  clean: true
+  sparse-checkout-cone-mode: true
+  fetch-depth: 1
+  fetch-tags: false
+  show-progress: true
+  lfs: false
+  submodules: false
+  set-safe-directory: true
+  allow-unsafe-pr-checkout: false
+Syncing repository: shiftynick/jev-axi
+Working directory is 'D:\a\jev-axi\jev-axi'
+[command]"C:\Program Files\Git\bin\git.exe" version
+git version 2.55.0.windows.5
+Temporarily overriding HOME='D:\a\_temp\87e41609-3be5-492a-9317-97c6bac73505' before making global git config changes
+Adding repository directory to the temporary git global config as a safe directory
+[command]"C:\Program Files\Git\bin\git.exe" config --global --add safe.directory D:\a\jev-axi\jev-axi
+Deleting the contents of 'D:\a\jev-axi\jev-axi'
+[command]"C:\Program Files\Git\bin\git.exe" init D:\a\jev-axi\jev-axi
+Initialized empty Git repository in D:/a/jev-axi/jev-axi/.git/
+[command]"C:\Program Files\Git\bin\git.exe" remote add origin https://github.com/shiftynick/jev-axi
+[command]"C:\Program Files\Git\bin\git.exe" config --local gc.auto 0
+[command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp core\.sshCommand
+[command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :\""
+[command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+[command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :\""
+[command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp ^includeIf\.gitdir:
+[command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "git config --local --show-origin --name-only --get-regexp remote.origin.url"
+[command]"C:\Program Files\Git\bin\git.exe" config --local http.https://github.com/.extraheader "AUTHORIZATION: basic ***"
+[command]"C:\Program Files\Git\bin\git.exe" -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +1240d1b88995285584955a2edaa3d544ff7008c1:refs/remotes/pull/5/merge
+From https://github.com/shiftynick/jev-axi
+ * [new ref]         1240d1b88995285584955a2edaa3d544ff7008c1 -> pull/5/merge
+[command]"C:\Program Files\Git\bin\git.exe" sparse-checkout disable
+[command]"C:\Program Files\Git\bin\git.exe" config --local --unset-all extensions.worktreeConfig
+[command]"C:\Program Files\Git\bin\git.exe" checkout --progress --force refs/remotes/pull/5/merge
+Note: switching to 'refs/remotes/pull/5/merge'.
+
+You are in 'detached HEAD' state. You can look around, make experimental
+changes and commit them, and you can discard any commits you make in this
+state without impacting any branches by switching back to a branch.
+
+If you want to create a new branch to retain commits you create, you may
+do so (now or later) by using -c with the switch command. Example:
+
+  git switch -c <new-branch-name>
+
+Or undo this operation with:
+
+  git switch -
+
+Turn off this advice by setting config variable advice.detachedHead to false
+
+HEAD is now at 1240d1b Merge 33dc2ba73031d77afc20314fced354d591ca0395 into eff72694226d748ce0d1f080546a9cbfe1e41f2c
+[command]"C:\Program Files\Git\bin\git.exe" log -1 --format=%H
+1240d1b88995285584955a2edaa3d544ff7008c1
+Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+with:
+  version: 10
+  dest: ~/setup-pnpm
+  run_install: null
+  cache: false
+  cache_dependency_path: pnpm-lock.yaml
+  package_json_file: package.json
+  standalone: false
+(node:6324) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+Progress: resolved 1, reused 0, downloaded 0, added 0
+Packages: +1
++
+Progress: resolved 1, reused 0, downloaded 1, added 0
+Progress: resolved 1, reused 0, downloaded 1, added 1
+Progress: resolved 1, reused 0, downloaded 1, added 1, done
+
+dependencies:
++ pnpm 10.34.5 (12.4.2 is available)
+
+Done in 3.8s
+Installation Completed!
+with:
+  node-version: 20
+  cache: pnpm
+  always-auth: false
+  check-latest: false
+  token: ***
+  package-manager-cache: true
+env:
+  PNPM_HOME: C:\Users\runneradmin\setup-pnpm\node_modules\.bin
+Attempting to download 20...
+(node:9044) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+Acquiring 20.20.2 - x64 from https://github.com/actions/node-versions/releases/download/20.20.2-23521894959/node-20.20.2-win32-x64.7z
+Extracting ...
+Adding to the cache ...
+node: v20.20.2
+npm: 10.8.2
+yarn: 1.22.22
+[command]C:\Windows\system32\cmd.exe /D /S /C "C:\Users\runneradmin\setup-pnpm\node_modules\.bin\pnpm.CMD store path --silent"
+D:\.pnpm-store\v10
+pnpm cache is not found
+[36;1mpnpm install --frozen-lockfile[0m
+shell: C:\Program Files\PowerShell\7\pwsh.EXE -command ". '{0}'"
+env:
+  PNPM_HOME: C:\Users\runneradmin\setup-pnpm\node_modules\.bin
+Lockfile is up to date, resolution step is skipped
+Progress: resolved 1, reused 0, downloaded 0, added 0
+Packages: +44
+++++++++++++++++++++++++++++++++++++++++++++
+Progress: resolved 44, reused 0, downloaded 44, added 44, done
+.../esbuild@0.28.2/node_modules/esbuild postinstall$ node install.js
+.../esbuild@0.28.2/node_modules/esbuild postinstall: Done
+
+dependencies:
++ @toon-format/toon 2.3.1
++ @typesafe-ai/sdk 0.6.0
++ axi-sdk-js 0.1.12
++ yaml 2.9.1
+
+devDependencies:
++ @types/node 26.5.1
++ tsx 4.23.13
++ typescript 7.0.2
++ vitest 5.0.0
+
+Done in 1.6s using pnpm v10.34.5
+[36;1mpnpm lint[0m
+shell: C:\Program Files\PowerShell\7\pwsh.EXE -command ". '{0}'"
+env:
+  PNPM_HOME: C:\Users\runneradmin\setup-pnpm\node_modules\.bin
+
+> jev-axi@0.1.1 lint D:\a\jev-axi\jev-axi
+> tsc --noEmit
+
+##[error]bin/jev-axi.ts(5,18): error TS2591: Cannot find name 'process'. Do you need to install type definitions for node? Try `npm i --save-dev @types/node` and then add 'node' to the types field in your tsconfig.
+##[error]src/cli.ts(88,35): error TS2591: Cannot find name 'process'. Do you need to install type definitions for node? Try `npm i --save-dev @types/node` and then add 'node' to the types field in your tsconfig.
+##[error]src/client.ts(1,28): error TS2591: Cannot find name 'node:crypto'. Do you need to install type definitions for node? Try `npm i --save-dev @types/node` and then add 'node' to the types field in your tsconfig.
+##[error]src/client.ts(2,57): error TS2591: Cannot find name 'node:fs'. Do you need to install type definitions for node? Try `npm i --save-dev @types/node` and then add 'node' to the types field in your tsconfig.
+##[error]src/client.ts(3,22): error TS2591: Cannot find name 'node:path'. Do you need to install type definitions for node? Try `npm i --save-dev @types/node` and then add 'node' to the types field in your tsconfig.
+##[error]src/client.ts(95,10): error TS2591: Cannot find name 'process'. Do you need to install type definitions for node? Try `npm i --save-dev @types/node` and then add 'node' to the types field in your tsconfig.
+##[error]src/commands/find.ts(1,42): error TS2591: Cannot find name 'node:fs'. Do you need to install type definitions for node? Try `npm i --save-dev @types/node` and then add 'node' to the types field in your tsconfig.
+##[error]src/commands/guard.ts(27,28): error TS2591: Cannot find name 'process'. Do you need to install type definitions for node? Try `npm i --save-dev @types/node` and then add 'node' to the types field in your tsconfig.
+##[error]src/commands/meta.ts(1,41): error TS2591: Cannot find name 'node:fs'. Do you need to install type definitions for node? Try `npm i --save-dev @types/node` and then add 'node' to the types field in your tsconfig.
+##[error]src/commands/meta.ts(156,35): error TS7006: Parameter 'f' implicitly has an 'any' type.
+##[error]src/commands/recipe.ts(1,81): error TS2591: Cannot find name 'node:fs'. Do you need to install type definitions for node? Try `npm i --save-dev @types/node` and then add 'node' to the types field in your tsconfig.
+##[error]src/commands/recipe.ts(2,32): error TS2591: Cannot find name 'node:path'. Do you need to install type definitions for node? Try `npm i --save-dev @types/node` and then add 'node' to the types field in your tsconfig.
+##[error]src/commands/recipe.ts(35,16): error TS2591: Cannot find name 'process'. Do you need to install type definitions for node? Try `npm i --save-dev @types/node` and then add 'node' to the types field in your tsconfig.
+##[error]src/commands/recipe.ts(42,46): error TS7006: Parameter 'f' implicitly has an 'any' type.
+##[error]src/commands/triage.ts(1,42): error TS2591: Cannot find name 'node:fs'. Do you need to install type definitions for node? Try `npm i --save-dev @types/node` and then add 'node' to the types field in your tsconfig.
+##[error]src/config.ts(1,80): error TS2591: Cannot find name 'node:fs'. Do you need to install type definitions for node? Try `npm i --save-dev @types/node` and then add 'node' to the types field in your tsconfig.
+##[error]src/config.ts(2,25): error TS2591: Cannot find name 'node:os'. Do you need to install type definitions for node? Try `npm i --save-dev @types/node` and then add 'node' to the types field in your tsconfig.
+##[error]src/config.ts(3,31): error TS2591: Cannot find name 'node:path'. Do you need to install type definitions for node? Try `npm i --save-dev @types/node` and then add 'node' to the types field in your tsconfig.
+##[error]src/config.ts(50,20): error TS2591: Cannot find name 'process'. Do you need to install type definitions for node? Try `npm i --save-dev @types/node` and then add 'node' to the types field in your tsconfig.
+##[error]src/config.ts(52,7): error TS2591: Cannot find name 'process'. Do you need to install type definitions for node? Try `npm i --save-dev @types/node` and then add 'node' to the types field in your tsconfig.
+##[error]src/config.ts(53,21): error TS2591: Cannot find name 'process'. Do you need to install type definitions for node? Try `npm i --save-dev @types/node` and then add 'node' to the types field in your tsconfig.
+##[error]src/config.ts(54,19): error TS2591: Cannot find name 'process'. Do you need to install type definitions for node? Try `npm i --save-dev @types/node` and then add 'node' to the types field in your tsconfig.
+##[error]src/config.ts(92,26): error TS2591: Cannot find name 'process'. Do you need to install type definitions for node? Try `npm i --save-dev @types/node` and then add 'node' to the types field in your tsconfig.
+##[error]src/config.ts(108,15): error TS2591: Cannot find name 'process'. Do you need to install type definitions for node? Try `npm i --save-dev @types/node` and then add 'node' to the types field in your tsconfig.
+##[error]src/config.ts(117,22): error TS2591: Cannot find name 'process'. Do you need to install type definitions for node? Try `npm i --save-dev @types/node` and then add 'node' to the types field in your tsconfig.
+##[error]src/git.ts(1,27): error TS2591: Cannot find name 'node:child_process'. Do you need to install type definitions for node? Try `npm i --save-dev @types/node` and then add 'node' to the types field in your tsconfig.
+##[error]src/git.ts(2,42): error TS2591: Cannot find name 'node:fs'. Do you need to install type definitions for node? Try `npm i --save-dev @types/node` and then add 'node' to the types field in your tsconfig.
+##[error]src/git.ts(5,46): error TS2591: Cannot find name 'process'. Do you need to install type definitions for node? Try `npm i --save-dev @types/node` and then add 'node' to the types field in your tsconfig.
+##[error]src/items.ts(1,65): error TS2591: Cannot find name 'node:fs'. Do you need to install type definitions for node? Try `npm i --save-dev @types/node` and then add 'node' to the types field in your tsconfig.
+##[error]src/items.ts(2,32): error TS2591: Cannot find name 'node:path'. Do you need to install type definitions for node? Try `npm i --save-dev @types/node` and then add 'node' to the types field in your tsconfig.
+##[error]src/items.ts(42,15): error TS2591: Cannot find name 'process'. Do you need to install type definitions for node? Try `npm i --save-dev @types/node` and then add 'node' to the types field in your tsconfig.
+##[error]src/items.ts(122,67): error TS7006: Parameter 'a' implicitly has an 'any' type.
+##[error]src/items.ts(122,70): error TS7006: Parameter 'b' implicitly has an 'any' type.
+##[error]src/state.ts(1,42): error TS2591: Cannot find name 'node:fs'. Do you need to install type definitions for node? Try `npm i --save-dev @types/node` and then add 'node' to the types field in your tsconfig.
+##[error]src/stdin.ts(1,30): error TS2591: Cannot find name 'node:fs'. Do you need to install type definitions for node? Try `npm i --save-dev @types/node` and then add 'node' to the types field in your tsconfig.
+##[error]src/stdin.ts(2,24): error TS2591: Cannot find name 'node:tty'. Do you need to install type definitions for node? Try `npm i --save-dev @types/node` and then add 'node' to the types field in your tsconfig.
+##[error]src/usage.ts(1,70): error TS2591: Cannot find name 'node:fs'. Do you need to install type definitions for node? Try `npm i --save-dev @types/node` and then add 'node' to the types field in your tsconfig.
+##[error]src/usage.ts(2,41): error TS2591: Cannot find name 'node:path'. Do you need to install type definitions for node? Try `npm i --save-dev @types/node` and then add 'node' to the types field in your tsconfig.
+##[error]src/usage.ts(27,35): error TS2591: Cannot find name 'process'. Do you need to install type definitions for node? Try `npm i --save-dev @types/node` and then add 'node' to the types field in your tsconfig.
+ ELIFECYCLE  Command failed with exit code 1.
+##[error]Process completed with exit code 1.

@@ -40,6 +40,18 @@ describe("action rendering", () => {
     expect(md).toContain("#### ✅ build");
   });
 
+  it("shows a root cause shared by several matrix jobs once", () => {
+    const failure = (text: string) => ({ root_cause: { line: 9, p: 0.8, text }, category: "test", flaky: "0.1", severity: "partial", context: [] });
+    const md = renderTriage([
+      { name: "test (ubuntu-latest, 22) › Run pnpm test", triage: failure("FAIL test/a.test.ts > adds 12ms") },
+      { name: "test (windows-latest, 22) › Run pnpm test", triage: failure("FAIL test/a.test.ts > adds 31ms") },
+      { name: "lint", triage: failure("src/x.ts(3,1): error TS2304") },
+    ]);
+    expect(md).toContain("#### ❌ 2 jobs › Run pnpm test: test (ubuntu-latest, 22), test (windows-latest, 22)");
+    expect(md).toContain("#### ❌ lint");
+    expect(md.match(/Likely cause/g)).toHaveLength(2);
+  });
+
   it("trims job logs to the last error and strips timestamps and groups", () => {
     const log = [
       "2026-09-17T13:04:27.2466084Z ##[group]Run pnpm test",

@@ -1,0 +1,238 @@
+﻿2026-09-17T13:03:34.5025380Z Current runner version: '2.337.0'
+Hosted Compute Agent
+Version: 20260828.587
+Commit: abac92662cab4cc7352de4f9f9d2e2419aad9c29
+Build Date: 2026-08-28T16:44:25Z
+Worker ID: {af5d4ab4-b8b0-4fb1-9382-4dfa8695d6c0}
+Azure Region: westus3
+Microsoft Windows Server 2025
+10.0.26100
+Datacenter
+Image: windows-2025-vs2026
+Version: 20260907.229.1
+Included Software: https://github.com/actions/runner-images/blob/win25-vs2026/20260907.229/images/windows/Windows2025-VS2026-Readme.md
+Image Release: https://github.com/actions/runner-images/releases/tag/win25-vs2026%2F20260907.229
+Contents: read
+Metadata: read
+Packages: read
+Secret source: Actions
+Cache mode: write
+Prepare workflow directory
+Prepare all required actions
+Getting action download info
+Download action repository 'actions/checkout@v7' (SHA:3d3c42e5aac5ba805825da76410c181273ba90b1)
+Download action repository 'pnpm/action-setup@v6' (SHA:0977fd99725f1db4007ccb2928dbb4e90d06cc86)
+Download action repository 'actions/setup-node@v7' (SHA:820762786026740c76f36085b0efc47a31fe5020)
+Complete job name: test (windows-latest, 24)
+with:
+  repository: shiftynick/jev-axi
+  token: ***
+  ssh-strict: true
+  ssh-user: git
+  persist-credentials: true
+  clean: true
+  sparse-checkout-cone-mode: true
+  fetch-depth: 1
+  fetch-tags: false
+  show-progress: true
+  lfs: false
+  submodules: false
+  set-safe-directory: true
+  allow-unsafe-pr-checkout: false
+Syncing repository: shiftynick/jev-axi
+Working directory is 'D:\a\jev-axi\jev-axi'
+[command]"C:\Program Files\Git\bin\git.exe" version
+git version 2.55.0.windows.5
+Temporarily overriding HOME='D:\a\_temp\7405a858-6a2a-4f35-a6cc-e97cc459916e' before making global git config changes
+Adding repository directory to the temporary git global config as a safe directory
+[command]"C:\Program Files\Git\bin\git.exe" config --global --add safe.directory D:\a\jev-axi\jev-axi
+Deleting the contents of 'D:\a\jev-axi\jev-axi'
+[command]"C:\Program Files\Git\bin\git.exe" init D:\a\jev-axi\jev-axi
+Initialized empty Git repository in D:/a/jev-axi/jev-axi/.git/
+[command]"C:\Program Files\Git\bin\git.exe" remote add origin https://github.com/shiftynick/jev-axi
+[command]"C:\Program Files\Git\bin\git.exe" config --local gc.auto 0
+Removing SSH command configuration
+[command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp core\.sshCommand
+[command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :\""
+Removing HTTP extra header
+[command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+[command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :\""
+Removing includeIf entries pointing to credentials config files
+[command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp ^includeIf\.gitdir:
+[command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "git config --local --show-origin --name-only --get-regexp remote.origin.url"
+[command]"C:\Program Files\Git\bin\git.exe" config --file D:\a\_temp\git-credentials-954536ab-9ff7-4450-aba3-6169800cb7ac.config http.https://github.com/.extraheader "AUTHORIZATION: basic ***"
+[command]"C:\Program Files\Git\bin\git.exe" config --local includeIf.gitdir:D:/a/jev-axi/jev-axi/.git.path D:\a\_temp\git-credentials-954536ab-9ff7-4450-aba3-6169800cb7ac.config
+[command]"C:\Program Files\Git\bin\git.exe" config --local includeIf.gitdir:D:/a/jev-axi/jev-axi/.git/worktrees/*.path D:\a\_temp\git-credentials-954536ab-9ff7-4450-aba3-6169800cb7ac.config
+[command]"C:\Program Files\Git\bin\git.exe" config --local includeIf.gitdir:/github/workspace/.git.path /github/runner_temp/git-credentials-954536ab-9ff7-4450-aba3-6169800cb7ac.config
+[command]"C:\Program Files\Git\bin\git.exe" config --local includeIf.gitdir:/github/workspace/.git/worktrees/*.path /github/runner_temp/git-credentials-954536ab-9ff7-4450-aba3-6169800cb7ac.config
+[command]"C:\Program Files\Git\bin\git.exe" -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +75691ed46ec5c990df47bc511cb39a6352ac3f9c:refs/remotes/origin/main
+From https://github.com/shiftynick/jev-axi
+ * [new ref]         75691ed46ec5c990df47bc511cb39a6352ac3f9c -> origin/main
+[command]"C:\Program Files\Git\bin\git.exe" branch --list --remote origin/main
+  origin/main
+[command]"C:\Program Files\Git\bin\git.exe" rev-parse refs/remotes/origin/main
+75691ed46ec5c990df47bc511cb39a6352ac3f9c
+[command]"C:\Program Files\Git\bin\git.exe" sparse-checkout disable
+[command]"C:\Program Files\Git\bin\git.exe" config --local --unset-all extensions.worktreeConfig
+[command]"C:\Program Files\Git\bin\git.exe" checkout --progress --force -B main refs/remotes/origin/main
+Switched to a new branch 'main'
+branch 'main' set up to track 'origin/main'.
+[command]"C:\Program Files\Git\bin\git.exe" log -1 --format=%H
+75691ed46ec5c990df47bc511cb39a6352ac3f9c
+with:
+  version: 10
+  dest: ~/setup-pnpm
+  run_install: null
+  cache: false
+  cache_dependency_path: pnpm-lock.yaml
+  package_json_file: package.json
+  standalone: false
+(node:8848) [DEP0190] DeprecationWarning: Passing args to a child process with shell option true can lead to security vulnerabilities, as the arguments are not escaped, only concatenated.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+added 1 package, and audited 2 packages in 15s
+
+1 package is looking for funding
+  run `npm fund` for details
+
+found 0 vulnerabilities
+Checking for updates...
+Switching pnpm from v11.19.0 to v10.34.5...
+.../1bb4-1a0af77a0e0-2c91b15956342518    | Progress: resolved 1, reused 0, downloaded 0, added 0
+.../1bb4-1a0af77a0e0-2c91b15956342518    |   +1 +
+.../1bb4-1a0af77a0e0-2c91b15956342518    | Progress: resolved 1, reused 0, downloaded 1, added 0
+.../1bb4-1a0af77a0e0-2c91b15956342518    | Progress: resolved 1, reused 0, downloaded 1, added 1
+.../1bb4-1a0af77a0e0-2c91b15956342518    | Progress: resolved 1, reused 0, downloaded 1, added 1, done
+[WARN] Detected a pnpm v10 installation layout at PNPM_HOME. The pnpm shims at PNPM_HOME have been refreshed so the new version is active, but pnpm v11 expects bins in PNPM_HOME/bin. Run "pnpm setup" to migrate your PATH to the v11 layout.
+Successfully updated pnpm to v10.34.5
+Installation Completed!
+with:
+  node-version: 24
+  cache: pnpm
+  check-latest: false
+  token: ***
+  package-manager-cache: true
+env:
+  PNPM_HOME: C:\Users\runneradmin\setup-pnpm\node_modules\.bin
+Found in cache @ C:\hostedtoolcache\windows\node\24.20.0\x64
+node: v24.20.0
+npm: 11.19.0
+yarn: 1.22.22
+[command]C:\Windows\system32\cmd.exe /D /S /C "C:\Users\runneradmin\setup-pnpm\node_modules\.bin\bin\pnpm.CMD store path --silent"
+D:\.pnpm-store\v10
+Cache hit for: node-cache-Windows-x64-pnpm-3096c240847766220605b0fd01db7b37e290c5a927c5fc13d7d8a7d1b2aa13f7
+Received 20474631 of 20474631 (100.0%), 23.5 MBs/sec
+Cache Size: ~20 MB (20474631 B)
+[command]"C:\Program Files\Git\usr\bin\tar.exe" -xf D:/a/_temp/16dbdb93-5a5a-4e1a-8812-0fe78a20a297/cache.tzst -P -C D:/a/jev-axi/jev-axi --force-local --use-compress-program "zstd -d"
+Cache restored successfully
+Cache restored from key: node-cache-Windows-x64-pnpm-3096c240847766220605b0fd01db7b37e290c5a927c5fc13d7d8a7d1b2aa13f7
+[36;1mpnpm install --frozen-lockfile[0m
+shell: C:\Program Files\PowerShell\7\pwsh.EXE -command ". '{0}'"
+env:
+  PNPM_HOME: C:\Users\runneradmin\setup-pnpm\node_modules\.bin
+Lockfile is up to date, resolution step is skipped
+Progress: resolved 1, reused 0, downloaded 0, added 0
+Packages: +45
++++++++++++++++++++++++++++++++++++++++++++++
+Progress: resolved 45, reused 45, downloaded 0, added 45, done
+
+dependencies:
++ @toon-format/toon 4.1.1
++ @typesafe-ai/sdk 0.6.0
++ axi-sdk-js 0.1.12
++ yaml 2.9.1
+
+devDependencies:
++ @types/node 22.20.3
++ tsx 4.23.13
++ typescript 7.0.2
++ vitest 5.0.1
+
+Done in 615ms using pnpm v10.34.5
+[36;1mpnpm lint[0m
+shell: C:\Program Files\PowerShell\7\pwsh.EXE -command ". '{0}'"
+env:
+  PNPM_HOME: C:\Users\runneradmin\setup-pnpm\node_modules\.bin
+
+> jev-axi@0.2.2 lint D:\a\jev-axi\jev-axi
+> tsc --noEmit
+
+[36;1mpnpm test[0m
+shell: C:\Program Files\PowerShell\7\pwsh.EXE -command ". '{0}'"
+env:
+  PNPM_HOME: C:\Users\runneradmin\setup-pnpm\node_modules\.bin
+
+> jev-axi@0.2.2 test D:\a\jev-axi\jev-axi
+> vitest run
+
+
+[1m[30m[46m RUN [49m[39m[22m [36mv5.0.1 [39m[90mD:/a/jev-axi/jev-axi[39m
+
+ [31m❯[39m test/safety.test.ts [2m([22m[2m9 tests[22m[2m | [22m[31m1 failed[39m[2m)[22m[32m 197[2mms[22m[39m
+   [31m❯[39m local fast path [2m(3)[22m
+     [32m✓[39m allows routine read-only and project commands without an API call[32m 2[2mms[22m[39m
+     [32m✓[39m sends anything that could hide intent to Jev[32m 1[2mms[22m[39m
+[31m     [31m×[31m allows edits inside the project or /tmp and checks sensitive or outside paths[39m[32m 5[2mms[22m[39m
+   [32m✓[39m redaction [2m(2)[22m
+     [32m✓[39m removes common credentials before anything is sent[32m 1[2mms[22m[39m
+     [32m✓[39m includes the contents of local scripts a command runs, redacted[32m 7[2mms[22m[39m
+   [32m✓[39m decisions [2m(3)[22m
+     [32m✓[39m denies on a strong blocking hazard, asks on a moderate one or high risk, else allows[32m 0[2mms[22m[39m
+     [32m✓[39m does not block on outside_project alone unless risk is high[32m 0[2mms[22m[39m
+     [32m✓[39m prints nothing for allow, and maps ask to deny for Codex[32m 0[2mms[22m[39m
+   [32m✓[39m setup safety [2m(1)[22m
+     [32m✓[39m installs idempotently, keeps other hooks, and removes cleanly[32m 180[2mms[22m[39m
+ [32m✓[39m test/units.test.ts [2m([22m[2m13 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m test/cache.test.ts [2m([22m[2m5 tests[22m[2m)[22m[33m 715[2mms[22m[39m
+ [32m✓[39m test/recipes.test.ts [2m([22m[2m6 tests[22m[2m)[22m[33m 814[2mms[22m[39m
+ [32m✓[39m test/args.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m test/stats.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 214[2mms[22m[39m
+ [32m✓[39m test/cli.test.ts [2m([22m[2m10 tests[22m[2m)[22m[33m 1281[2mms[22m[39m
+ [32m✓[39m test/git.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 3[2mms[22m[39m
+ [32m✓[39m test/skill.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m✓[39m test/migrate.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 32[2mms[22m[39m
+ [32m✓[39m test/stdin.test.ts [2m([22m[2m2 tests[22m[2m)[22m[33m 1983[2mms[22m[39m
+   [32m✓[39m empty stdin from agent harnesses [2m(2)[22m
+     [33m[2m✓[22m[39m diff reviews the git working tree instead of the empty stdin[33m 1285[2mms[22m[39m
+     [33m[2m✓[22m[39m commands needing input say what to pass instead of 'state is empty'[33m 697[2mms[22m[39m
+
+[31m⎯⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Tests 1 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
+
+[41m[1m FAIL [22m[49m test/safety.test.ts[2m > [22mlocal fast path[2m > [22mallows edits inside the project or /tmp and checks sensitive or outside paths
+[31m[1mAssertionError[22m: expected 'evaluate' to be 'allow' // Object.is equality[39m
+
+Expected: [32m"allow"[39m
+Received: [31m"evaluate"[39m
+
+[36m [2m❯[22m test/safety.test.ts:[2m23:118[22m[39m
+    [90m 21|[39m   it("allows edits inside the project or /tmp and checks sensitive or …
+    [90m 22|[39m     expect(localVerdict({ tool_name: "Edit", tool_input: { file_path: …
+    [90m 23|[39m     expect(localVerdict({ tool_name: "Write", tool_input: { file_path:…
+    [90m   |[39m                                                                                                                      [31m^[39m
+    [90m 24|[39m     expect(localVerdict({ tool_name: "Write", tool_input: { file_path:…
+    [90m 25|[39m     expect(localVerdict({ tool_name: "Write", tool_input: { file_path:…
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯[22m[39m
+
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[2m | [22m[1m[32m10 passed[39m[22m[90m (11)[39m
+[2m      Tests [22m [1m[31m1 failed[39m[22m[2m | [22m[1m[32m62 passed[39m[22m[90m (63)[39m
+[2m   Start at [22m 13:04:26
+[2m   Duration [22m 4.13s[2m (tests 64%, transform 28%, import 7%)[22m
+
+[2m  Transform [22m [33mtransforming modules took 2.28s[39m[2m · 28% of tracked time, re-done on every run[22m
+[2m            [22m [2mpersist transforms across runs with [22m[33mfsModuleCache: true[39m
+[2m            [22m [2mon CI this only helps when the cache directory is persisted between runs[22m
+[2m            [22m [2mlearn more: https://vitest.dev/guide/improving-performance#caching-between-reruns[22m
+
+
+##[error]AssertionError: expected 'evaluate' to be 'allow' // Object.is equality
+
+Expected: "allow"
+Received: "evaluate"
+
+ ❯ test/safety.test.ts:23:118
+
+
+ ELIFECYCLE  Test failed. See above for more details.
+##[error]Process completed with exit code 1.

@@ -37,10 +37,48 @@ export function renderReview(review, { title = "jev-axi review" } = {}) {
   return lines.join("\n");
 }
 
+/** Root-cause text with timings, counts, and paths normalized, so matrix jobs failing the same way match. */
+function causeKey(r) {
+  if (r.error || !r.triage?.root_cause) return undefined;
+  return String(r.triage.root_cause.text)
+    .toLowerCase()
+    .replace(/[a-z]:[\\/]\S*|\/\S*/g, "<path>")
+    .replace(/\d+(\.\d+)?/g, "#")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/** Merge results with the same root cause into one entry naming every job. */
+export function groupTriage(results) {
+  const groups = [];
+  const byKey = new Map();
+  for (const r of results) {
+    const key = causeKey(r);
+    const existing = key && byKey.get(key);
+    if (existing) {
+      existing.names.push(r.name);
+      continue;
+    }
+    const group = { ...r, names: [r.name] };
+    groups.push(group);
+    if (key) byKey.set(key, group);
+  }
+  return groups.map(({ names, ...r }) => ({ ...r, name: groupName(names) }));
+}
+
+/** "4 jobs › Run pnpm test: test (ubuntu-latest, 22), ..." when the jobs share a failed step. */
+function groupName(names) {
+  if (names.length === 1) return names[0];
+  const steps = new Set(names.map((n) => n.split(" › ")[1]));
+  const step = steps.size === 1 ? [...steps][0] : undefined;
+  const jobs = step ? names.map((n) => n.split(" › ")[0]) : names;
+  return `${names.length} jobs${step ? ` › ${step}` : ""}: ${jobs.join(", ")}`;
+}
+
 /** Markdown for one or more `jev-axi triage --json` outputs, each labeled with its job or log name. */
 export function renderTriage(results) {
   const lines = [TRIAGE_MARKER, "### jev-axi triage", ""];
-  for (const { name, triage, error } of results) {
+  for (const { name, triage, error } of groupTriage(results)) {
     if (error) {
       lines.push(`#### ${cell(name)}`, "", `Could not triage: ${cell(error)}`, "");
       continue;

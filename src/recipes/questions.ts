@@ -103,7 +103,7 @@ export const FILES_PATH_QUESTION = (task: string, ids: string[]): QuestionSet =>
 export const TRIAGE_QUESTIONS = (lineIds: string[]): QuestionSet => ({
   first_error: {
     type: "choice",
-    instructions: "Each line of the document starts with its id. Which line is the root cause error: the first line that reports the actual failure, rather than a later consequence, a stack frame, a warning, or a summary?",
+    instructions: "Each line of the document starts with its id. Which line is the root cause error: the earliest line that gives the specific error message (the exception, assertion, compiler, or command error text)? Prefer it over lines that only name the failing test or file or count failures, and over later consequences, stack frames, warnings, and summaries.",
     criteria: Object.fromEntries(lineIds.map((id) => [id, null])),
   },
   has_error: {

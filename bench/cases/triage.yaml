@@ -25,3 +25,20 @@ cases:
   - name: flaky-e2e-timeout
     file: bench/fixtures/logs/flaky-timeout.log
     expect: { root_cause_regex: "TimeoutError|Timeout 30000ms", flaky_min: 0.5 }
+  # Real GitHub Actions job logs from this repository, trimmed the way the GitHub Action trims them
+  # (timestamps and groups removed, cut after the last ##[error] line).
+  - name: ci-vitest-matrix
+    file: bench/fixtures/logs/ci-vitest-matrix.log
+    expect: { category: test, root_cause_regex: "expected 4 to be 8|FAIL .*smoke", flaky_max: 0.3 }
+  - name: ci-windows-test
+    file: bench/fixtures/logs/ci-windows-test.log
+    expect: { category: test, root_cause_regex: "expected 'evaluate' to be 'allow'|FAIL .*safety\\.test", flaky_max: 0.3 }
+  - name: ci-skill-stale
+    file: bench/fixtures/logs/ci-skill-stale.log
+    expect: { category_in: [config, compile], root_cause_regex: "is stale", flaky_max: 0.3 }
+  - name: ci-npm-publish
+    file: bench/fixtures/logs/ci-npm-publish.log
+    expect: { category_in: [config, dependency], root_cause_regex: "cannot publish over", flaky_max: 0.3 }
+  - name: ci-tsc-types
+    file: bench/fixtures/logs/ci-tsc-types.log
+    expect: { category: compile, root_cause_regex: "TS2591", flaky_max: 0.4 }

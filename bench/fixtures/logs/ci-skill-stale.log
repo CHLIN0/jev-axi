@@ -1,0 +1,217 @@
+﻿2026-09-17T02:03:37.7376750Z Current runner version: '2.337.0'
+Hosted Compute Agent
+Version: 20260828.587
+Commit: abac92662cab4cc7352de4f9f9d2e2419aad9c29
+Build Date: 2026-08-28T16:44:25Z
+Worker ID: {5886b433-2e5a-410a-b363-a1bf57e73b93}
+Azure Region: westus
+macOS
+26.6.2
+25G83
+Image: macos-26-arm64
+Version: 20260907.0351.1
+Included Software: https://github.com/actions/runner-images/blob/macos-26-arm64/20260907.0351/images/macos/macos-26-arm64-Readme.md
+Image Release: https://github.com/actions/runner-images/releases/tag/macos-26-arm64%2F20260907.0351
+Contents: read
+Metadata: read
+Packages: read
+Secret source: Actions
+Cache mode: write
+Prepare workflow directory
+Prepare all required actions
+Getting action download info
+Download action repository 'actions/checkout@v7' (SHA:3d3c42e5aac5ba805825da76410c181273ba90b1)
+Download action repository 'pnpm/action-setup@v6' (SHA:0977fd99725f1db4007ccb2928dbb4e90d06cc86)
+Download action repository 'actions/setup-node@v7' (SHA:820762786026740c76f36085b0efc47a31fe5020)
+Complete job name: test (macos-latest, 24)
+with:
+  repository: shiftynick/jev-axi
+  token: ***
+  ssh-strict: true
+  ssh-user: git
+  persist-credentials: true
+  clean: true
+  sparse-checkout-cone-mode: true
+  fetch-depth: 1
+  fetch-tags: false
+  show-progress: true
+  lfs: false
+  submodules: false
+  set-safe-directory: true
+  allow-unsafe-pr-checkout: false
+Syncing repository: shiftynick/jev-axi
+Working directory is '/Users/runner/work/jev-axi/jev-axi'
+[command]/opt/homebrew/bin/git version
+git version 2.55.0
+Copying '/Users/runner/.gitconfig' to '/Users/runner/work/_temp/140277a2-6818-46df-9ec8-db8e30409245/.gitconfig'
+Temporarily overriding HOME='/Users/runner/work/_temp/140277a2-6818-46df-9ec8-db8e30409245' before making global git config changes
+Adding repository directory to the temporary git global config as a safe directory
+[command]/opt/homebrew/bin/git config --global --add safe.directory /Users/runner/work/jev-axi/jev-axi
+Deleting the contents of '/Users/runner/work/jev-axi/jev-axi'
+[command]/opt/homebrew/bin/git init /Users/runner/work/jev-axi/jev-axi
+hint: Using 'master' as the name for the initial branch. This default branch name
+hint: will change to "main" in Git 3.0. To configure the initial branch name
+hint: to use in all of your new repositories, which will suppress this warning,
+hint: call:
+hint:
+hint: 	git config --global init.defaultBranch <name>
+hint:
+hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+hint: 'development'. The just-created branch can be renamed via this command:
+hint:
+hint: 	git branch -m <name>
+hint:
+hint: Disable this message with "git config set advice.defaultBranchName false"
+Initialized empty Git repository in /Users/runner/work/jev-axi/jev-axi/.git/
+[command]/opt/homebrew/bin/git remote add origin https://github.com/shiftynick/jev-axi
+[command]/opt/homebrew/bin/git config --local gc.auto 0
+Removing SSH command configuration
+[command]/opt/homebrew/bin/git config --local --name-only --get-regexp core\.sshCommand
+[command]/opt/homebrew/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+Removing HTTP extra header
+[command]/opt/homebrew/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+[command]/opt/homebrew/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+Removing includeIf entries pointing to credentials config files
+[command]/opt/homebrew/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+[command]/opt/homebrew/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+[command]/opt/homebrew/bin/git config --file /Users/runner/work/_temp/git-credentials-23b49c8c-8cf5-4fea-929e-2d2fdf958980.config http.https://github.com/.extraheader AUTHORIZATION: basic ***
+[command]/opt/homebrew/bin/git config --local includeIf.gitdir:/Users/runner/work/jev-axi/jev-axi/.git.path /Users/runner/work/_temp/git-credentials-23b49c8c-8cf5-4fea-929e-2d2fdf958980.config
+[command]/opt/homebrew/bin/git config --local includeIf.gitdir:/Users/runner/work/jev-axi/jev-axi/.git/worktrees/*.path /Users/runner/work/_temp/git-credentials-23b49c8c-8cf5-4fea-929e-2d2fdf958980.config
+[command]/opt/homebrew/bin/git config --local includeIf.gitdir:/github/workspace/.git.path /github/runner_temp/git-credentials-23b49c8c-8cf5-4fea-929e-2d2fdf958980.config
+[command]/opt/homebrew/bin/git config --local includeIf.gitdir:/github/workspace/.git/worktrees/*.path /github/runner_temp/git-credentials-23b49c8c-8cf5-4fea-929e-2d2fdf958980.config
+[command]/opt/homebrew/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +6067add8c07a6bc2b52b41866caa29db914b6ece:refs/remotes/origin/main
+From https://github.com/shiftynick/jev-axi
+ * [new ref]         6067add8c07a6bc2b52b41866caa29db914b6ece -> origin/main
+[command]/opt/homebrew/bin/git branch --list --remote origin/main
+  origin/main
+[command]/opt/homebrew/bin/git rev-parse refs/remotes/origin/main
+6067add8c07a6bc2b52b41866caa29db914b6ece
+[command]/opt/homebrew/bin/git sparse-checkout disable
+[command]/opt/homebrew/bin/git config --local --unset-all extensions.worktreeConfig
+[command]/opt/homebrew/bin/git checkout --progress --force -B main refs/remotes/origin/main
+Switched to a new branch 'main'
+branch 'main' set up to track 'origin/main'.
+[command]/opt/homebrew/bin/git log -1 --format=%H
+6067add8c07a6bc2b52b41866caa29db914b6ece
+with:
+  version: 10
+  dest: ~/setup-pnpm
+  run_install: null
+  cache: false
+  cache_dependency_path: pnpm-lock.yaml
+  package_json_file: package.json
+  standalone: false
+
+added 1 package, and audited 2 packages in 2s
+
+1 package is looking for funding
+  run `npm fund` for details
+
+found 0 vulnerabilities
+Checking for updates...
+Switching pnpm from v11.19.0 to v10.34.5...
+.../v11/705-1a0ad1b069b-6c7535589543054b | Progress: resolved 1, reused 0, downloaded 0, added 0
+.../v11/705-1a0ad1b069b-6c7535589543054b |   +1 +
+.../v11/705-1a0ad1b069b-6c7535589543054b | Progress: resolved 1, reused 0, downloaded 1, added 1, done
+[WARN] Detected a pnpm v10 installation layout at PNPM_HOME. The pnpm shims at PNPM_HOME have been refreshed so the new version is active, but pnpm v11 expects bins in PNPM_HOME/bin. Run "pnpm setup" to migrate your PATH to the v11 layout.
+Successfully updated pnpm to v10.34.5
+Installation Completed!
+with:
+  node-version: 24
+  cache: pnpm
+  check-latest: false
+  token: ***
+  package-manager-cache: true
+env:
+  PNPM_HOME: /Users/runner/setup-pnpm/node_modules/.bin
+Found in cache @ /Users/runner/hostedtoolcache/node/24.20.0/arm64
+node: v24.20.0
+npm: 11.19.0
+yarn: 1.22.22
+[command]/Users/runner/setup-pnpm/node_modules/.bin/bin/pnpm store path --silent
+/Users/runner/setup-pnpm/node_modules/.bin/store/v10
+Cache hit for: node-cache-macOS-arm64-pnpm-3096c240847766220605b0fd01db7b37e290c5a927c5fc13d7d8a7d1b2aa13f7
+Received 0 of 18572572 (0.0%), 0.0 MBs/sec
+Received 18572572 of 18572572 (100.0%), 14.1 MBs/sec
+Cache Size: ~18 MB (18572572 B)
+[command]/opt/homebrew/bin/gtar -xf /Users/runner/work/_temp/5e578fe3-963d-4f84-8dbe-77f718fa540e/cache.tzst -P -C /Users/runner/work/jev-axi/jev-axi --delay-directory-restore --use-compress-program unzstd
+Cache restored successfully
+Cache restored from key: node-cache-macOS-arm64-pnpm-3096c240847766220605b0fd01db7b37e290c5a927c5fc13d7d8a7d1b2aa13f7
+[36;1mpnpm install --frozen-lockfile[0m
+shell: /bin/bash -e {0}
+env:
+  PNPM_HOME: /Users/runner/setup-pnpm/node_modules/.bin
+Lockfile is up to date, resolution step is skipped
+Progress: resolved 1, reused 0, downloaded 0, added 0
+Packages: +45
++++++++++++++++++++++++++++++++++++++++++++++
+Progress: resolved 45, reused 45, downloaded 0, added 45, done
+.../esbuild@0.28.2/node_modules/esbuild postinstall$ node install.js
+.../esbuild@0.28.2/node_modules/esbuild postinstall: Done
+
+dependencies:
++ @toon-format/toon 4.1.1
++ @typesafe-ai/sdk 0.6.0
++ axi-sdk-js 0.1.12
++ yaml 2.9.1
+
+devDependencies:
++ @types/node 22.20.3
++ tsx 4.23.13
++ typescript 7.0.2
++ vitest 5.0.1
+
+Done in 870ms using pnpm v10.34.5
+[36;1mpnpm lint[0m
+shell: /bin/bash -e {0}
+env:
+  PNPM_HOME: /Users/runner/setup-pnpm/node_modules/.bin
+
+> jev-axi@0.2.2 lint /Users/runner/work/jev-axi/jev-axi
+> tsc --noEmit
+
+[36;1mpnpm test[0m
+shell: /bin/bash -e {0}
+env:
+  PNPM_HOME: /Users/runner/setup-pnpm/node_modules/.bin
+
+> jev-axi@0.2.2 test /Users/runner/work/jev-axi/jev-axi
+> vitest run
+
+
+[1m[30m[46m RUN [49m[39m[22m [36mv5.0.1 [39m[90m/Users/runner/work/jev-axi/jev-axi[39m
+
+ [32m✓[39m test/cli.test.ts [2m([22m[2m10 tests[22m[2m)[22m[32m 50[2mms[22m[39m
+ [32m✓[39m test/recipes.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 50[2mms[22m[39m
+ [32m✓[39m test/units.test.ts [2m([22m[2m13 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m test/cache.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 35[2mms[22m[39m
+ [32m✓[39m test/stats.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 12[2mms[22m[39m
+ [32m✓[39m test/args.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+ [32m✓[39m test/skill.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 12[2mms[22m[39m
+ [32m✓[39m test/git.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+ [32m✓[39m test/migrate.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 3[2mms[22m[39m
+ [32m✓[39m test/stdin.test.ts [2m([22m[2m2 tests[22m[2m)[22m[33m 1496[2mms[22m[39m
+   [32m✓[39m empty stdin from agent harnesses [2m(2)[22m
+     [33m[2m✓[22m[39m diff reviews the git working tree instead of the empty stdin[33m 602[2mms[22m[39m
+     [33m[2m✓[22m[39m commands needing input say what to pass instead of 'state is empty'[33m 893[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m10 passed[39m[22m[90m (10)[39m
+[2m      Tests [22m [1m[32m54 passed[39m[22m[90m (54)[39m
+[2m   Start at [22m 02:03:52
+[2m   Duration [22m 2.34s[2m (tests 64%, transform 21%, import 13%, worker 1%)[22m
+
+[2m    Isolate [22m [33m10 workers spawned[39m[2m · ~94ms startup each (spawn + environment, per file)[22m
+[2m            [22m [2mat least ~376ms faster with [22m[33misolate: false[39m[2m — reuses workers across files instead of one per file[22m
+
+[36;1mpnpm check:skill[0m
+shell: /bin/bash -e {0}
+env:
+  PNPM_HOME: /Users/runner/setup-pnpm/node_modules/.bin
+
+> jev-axi@0.2.2 check:skill /Users/runner/work/jev-axi/jev-axi
+> tsx scripts/build-skill.ts --check
+
+skills/jev-axi/references/commands.md is stale; run `pnpm build:skill`
+skill is valid
+ ELIFECYCLE  Command failed with exit code 1.
+##[error]Process completed with exit code 1.
