@@ -46,7 +46,7 @@
     "build:skill": "tsx scripts/build-skill.ts",
     "check:skill": "tsx scripts/build-skill.ts --check",
     "lint": "tsc --noEmit",
-    "prepublishOnly": "pnpm build"
+    "prepublishOnly": "npm run build"
   },
   "dependencies": {
     "@toon-format/toon": "^2.1.0",
