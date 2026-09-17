@@ -26,9 +26,9 @@ export const DEFAULT_MODEL = "jev-latest";
 export const DEFAULT_PRICE: Required<Prices> = { input: 0.042, output: 0 };
 export const DEFAULT_THRESHOLDS: Thresholds = { act: 0.75, confirm: 0.45 };
 
-/** One-time rename of a pre-rename `jev-axi` directory to `jev-axi`, if the new one does not exist yet. */
+/** One-time rename of a directory left by the briefly used `jev-cli` name, if the current one does not exist yet. */
 function adoptLegacyDir(dir: string): string {
-  const legacy = join(dirname(dir), "jev-axi");
+  const legacy = join(dirname(dir), "jev-cli");
   if (!existsSync(dir) && existsSync(legacy)) {
     try {
       renameSync(legacy, dir);
