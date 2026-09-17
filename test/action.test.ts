@@ -89,7 +89,8 @@ function runAction(envOverrides: Record<string, string>): Promise<{ code: number
 function fakeJevAxi(verdict: string): string {
   const script = join(mkdtempSync(join(tmpdir(), "jev-fake-")), "jev.mjs");
   const out = review(verdict, [{ file: "x.js", "+/-": "+1/-0", risk: 1, band: "act", flags: verdict === "ok" ? "-" : "secrets" }]);
-  writeFileSync(script, `process.stdin.resume(); process.stdin.on("end", () => console.log(${JSON.stringify(JSON.stringify(out))}));`);
+  // Stray output before the JSON must not break parsing.
+  writeFileSync(script, `process.stdin.resume(); process.stdin.on("end", () => { console.log("npm warn something"); console.log(${JSON.stringify(JSON.stringify(out, null, 2))}); });`);
   return JSON.stringify([process.execPath, script]);
 }
 

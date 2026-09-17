@@ -54,10 +54,14 @@ function jevAxi(args, stdin) {
     env: { ...env, TYPESAFE_API_KEY: input("api-key") },
   });
   const out = (r.stdout ?? "").trim();
-  try {
-    if (r.status === 0) return JSON.parse(out);
-  } catch {
-    // fall through
+  if (r.status === 0) {
+    // The JSON document starts at the first line that opens an object; tolerate stray output before it.
+    const start = out.startsWith("{") ? 0 : out.indexOf("\n{") + 1;
+    try {
+      if (start >= 0) return JSON.parse(out.slice(start));
+    } catch {
+      // fall through
+    }
   }
   throw new Error((out || r.stderr || r.error?.message || `exit ${r.status}`).split("\n").slice(0, 3).join(" "));
 }

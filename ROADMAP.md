@@ -28,10 +28,10 @@ a judgment, and more use of the probabilities Jev returns.
 
 Run the same checks with nobody asking.
 
-- 🟡 **GitHub Action** (unreleased): `diff` review on every pull request, posted as a
+- 🟢 **GitHub Action**: `diff` review on every pull request, posted as a
   check with the risk score; `triage` on failed jobs, posted as a comment with the likely
   cause and the exact log lines.
-- 🟡 **Git hooks** (`jev-axi setup git-hooks`, unreleased): pre-commit blocks credentials found locally and
+- 🟢 **Git hooks** (`jev-axi setup git-hooks`): pre-commit blocks credentials found locally and
   warns on risky diffs, debug leftovers, and missing tests; commit-msg warns when the message
   does not describe the diff.
 - ⚪ **pre-push hook**: risky changes such as migrations without a note.
@@ -105,7 +105,7 @@ Jev returns probabilities; most tools throw them away.
 ## 8. Safety beyond coding agents
 
 - 🟢 **PreToolUse safety hook** for Claude Code and Codex (`jev-axi setup safety`).
-- 🟡 **Generic pre-exec gate** (`jev-axi guard-exec -- <command>`, unreleased): the same hazard scoring
+- 🟢 **Generic pre-exec gate** (`jev-axi guard-exec -- <command>`): the same hazard scoring
   for cron jobs, CI scripts, and runbooks.
 - 💭 **Bot middleware**: score inbound messages for injection, abuse, and spam before a bot
   acts on them; the `guard` recipe packaged for that.
@@ -117,10 +117,11 @@ Jev returns probabilities; most tools throw them away.
   Agent Skills package; recipe evals with a baseline.
 - 🟢 0.3: safety hook; explorer subagent; concurrent chunk requests; docs-aware `files`;
   agent benchmark.
+- 🟢 0.4: `guard-exec`; git hooks; GitHub Action for pull request review and CI triage;
+  credentials redacted before `diff` and `triage` send anything.
 
 ## Suggested order
 
-1. GitHub Action: the most visible way to see what jev-axi does.
-2. Streaming filter and labeling: from agent accessory to general tool.
-3. Calibrate and escalation: what a wrapper around a general model can't offer as honestly.
-4. Recipe registry, once there are external recipe authors.
+1. Streaming filter and labeling: from agent accessory to general tool.
+2. Calibrate and escalation: what a wrapper around a general model can't offer as honestly.
+3. Recipe registry, once there are external recipe authors.
