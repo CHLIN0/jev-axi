@@ -145,12 +145,19 @@ function checkFiles(r: any, e: Expect): Check {
   return hit ? ok(`#${ranked.indexOf(hit) + 1} ${hit}`) : fail(`top ${top}: ${ranked.join(", ") || "none"}; wanted ${wanted.join("|")}`);
 }
 
-function checkFind(r: any, e: Expect): Check {
+function checkFind(r: any, e: Expect, file: string): Check {
   const top = Number(e["top"] ?? 3);
+  // A statement often spans lines (`throw validation(` then the message), so a hit
+  // counts when the pattern appears within `window` lines of it.
+  const window = Number(e["window"] ?? 2);
   const re = new RegExp(String(e["line_regex"]));
+  const lines = readFileSync(file, "utf8").split(/\r?\n/);
   const hits: any[] = (r.hits ?? []).slice(0, top);
-  const hit = hits.find((h) => re.test(String(h.text)));
-  return hit ? ok(`line ${hit.line} (p ${hit.p})`) : fail(`top ${top} lines ${hits.map((h) => h.line).join(",") || "none"} !~ /${e["line_regex"]}/`);
+  const near = (line: number) => lines.slice(Math.max(0, line - 1 - window), line + window).some((l) => re.test(l));
+  const hit = hits.find((h) => near(Number(h.line)));
+  return hit
+    ? ok(`line ${hit.line} (p ${hit.p}, rank ${hits.indexOf(hit) + 1})`)
+    : fail(`top ${top} lines ${hits.map((h) => h.line).join(",") || "none"}: no /${e["line_regex"]}/ within ${window} lines`);
 }
 
 function checkPrimitive(r: any, e: Expect): Check {
@@ -184,7 +191,7 @@ async function runCase(suite: Suite, c: Case): Promise<CaseResult> {
         break;
       case "find":
         r = await run(["find", c.question!, join(ROOT, c.file!), "--top", String(c.expect["top"] ?? 3)]);
-        check = checkFind(r, c.expect);
+        check = checkFind(r, c.expect, join(ROOT, c.file!));
         break;
       case "primitives": {
         const args = [c.command!, c.question!, "--text", c.text!];
