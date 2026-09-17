@@ -5,3 +5,4 @@ dist/
 bench/results/*
 !bench/results/baseline.json
 bench/agent/results/
+bench/transcripts/out/
