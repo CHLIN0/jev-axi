@@ -1,27 +1,41 @@
 # Agent benchmark
 
-Measures whether an agent finishes coding tasks cheaper and in fewer turns
-when jev-axi is available. Each task runs in a fresh clone of a target
-repository under two conditions:
+Measures whether Claude Code gets real work done cheaper, faster, or more correctly when
+jev-axi is available. Each task runs as a headless `claude -p` session in a fresh copy of a
+pinned repository (`tasks.yaml` names the repo and commit), under up to three conditions:
 
-- `baseline`: Claude Code with no mention of jev-axi.
-- `jev-axi`: the same, with a `CLAUDE.md` line telling the agent to use
-  `jev-axi files`, `find`, and `triage` before reading files or logs.
+| condition | skill | jev-axi on PATH | SessionStart hook |
+| --- | --- | --- | --- |
+| `baseline` | no | no | no |
+| `jev-axi` | in `.claude/skills` | yes | no |
+| `jev-axi-hook` | in `.claude/skills` | yes | yes, as `jev-axi setup hooks --project` installs |
 
-Every run uses `claude -p` with `--output-format json`, which reports
-`total_cost_usd`, `num_turns`, and `duration_ms`. Runs are repeated `REPEATS`
-times per condition and the medians are reported.
+Prompts never mention jev-axi, so the benchmark measures whether it gets used on its own and
+whether that pays off.
 
 ```sh
-export TYPESAFE_API_KEY=...          # for the jev-axi condition
-REPEATS=3 MODEL=claude-sonnet-4-6 bench/agent/run.sh https://github.com/kunchenguid/gh-axi bench/agent/tasks.yaml
+pnpm build
+python3 bench/agent/bench.py --repo ~/Work/t3code --only theme-size-limits --repeats 1   # smoke test
+python3 bench/agent/bench.py --repo ~/Work/t3code --repeats 3 --parallel 4 --model sonnet
+python3 bench/agent/bench.py --repo x --rescore bench/agent/results/<stamp>              # regrade after editing tasks.yaml
 ```
 
-This costs real money: roughly (tasks x conditions x repeats) Claude Code
-sessions. Start with `REPEATS=1` and one or two tasks. Results land in
-`bench/agent/results/<timestamp>.jsonl`, one line per run, plus a summary
-table on stdout.
+Per run it records, in `results/<stamp>/runs.jsonl` (gitignored):
 
-`tasks.yaml` holds tasks as `{ name, prompt, check }` where `check` is a
-shell command run in the clone afterwards that exits 0 on success, so success
-rate is measured, not just cost.
+- Claude's `total_cost_usd`, turns, duration, and token usage from `--output-format json`
+- Jev's token spend from an isolated jev-axi ledger, priced at $0.042 per million input tokens
+- from the session transcript and its subagent transcripts: file reads, searches, subagents
+  spawned, jev-axi commands run, and whether the skill was loaded
+- whether the final answer matched the task's `expect` patterns (all required) or
+  `expect_min` (at least `min` of `patterns`)
+
+This spends real Claude and TypeSafe credits: a narrow task costs about $0.15 per run with
+Sonnet, a broad multi-file task $0.25 to $1. Run-to-run variance is large, so compare medians
+over several repeats before drawing conclusions.
+
+Task design notes:
+
+- Narrow "where is X" questions are solved by `grep` in a few turns; they are sanity checks.
+- The expensive pattern in real transcripts is broad exploration across many files (see
+  `bench/transcripts/mine.py`), so the tasks that matter are the broad ones.
+- Claude Code often explores inside subagents, which is why subagent transcripts are counted.

@@ -1,22 +1,52 @@
-# Tasks for the agent benchmark. `check` runs inside the clone after the agent
-# finishes and must exit 0 for the run to count as a success.
+# Agent benchmark tasks against a pinned copy of a real repository.
+# Prompts describe behavior, not identifiers, so a single grep is not enough.
+# `expect` lists regexes that must all appear in the agent's final answer.
+repo: https://github.com/shiftynick/t3code
+commit: 6299503dd9
 tasks:
-  - name: locate-flag-validation
+  - name: attachment-cleanup
     prompt: >
-      Find the function that rejects unknown command-line flags in this repository and
-      add a one-line code comment above it that says "// AXI principle 6: fail loud on unknown flags".
-      Do not change behavior.
-    check: grep -rq "AXI principle 6" src/
+      In apps/server, if a user uploads an attachment but never sends the message, how long
+      does the server keep it before deleting it, is a partially uploaded file handled
+      differently, and how often does the cleanup check run? Point me to the files. Don't
+      change anything.
+    expect: ["24\\s*h|24 hours|86400000|24 \\* 60 \\* 60", "(1\\s*h|1 hour|one hour|3600000|60 \\* 60 \\* 1000)", "15\\s*min|15 minutes|900000|15 \\* 60", "attachmentStore\\.ts", "AttachmentUpload\\.ts"]
 
-  - name: explain-error-shape
+  - name: relay-restart-backoff
     prompt: >
-      Write a file NOTES.md that names the source file and function where CLI errors are
-      converted into the structured stdout error format, in one sentence.
-    check: test -f NOTES.md && grep -q "formatCliError" NOTES.md
+      In apps/server, when the relay client for a managed endpoint keeps crashing, how does
+      the server space out restarts, what is the first delay and the longest it will ever
+      wait? Name the file. Don't change anything.
+    expect: ["(\\b1\\s*s\\b|1 second|1[,_]?000\\s*ms)", "(60\\s*s\\b|60 seconds|1 minute|60[,_]?000)", "doubl|exponential|\\* 2", "ManagedEndpointRuntime\\.ts"]
 
-  - name: triage-failing-test
+  - name: theme-size-limits
     prompt: >
-      Run `pnpm test 2>&1 | tail -200` (install dependencies first if needed). Then write
-      FAILURE.md with the single root-cause line of the first failing test, or the words
-      "all tests pass" if nothing failed.
-    check: test -f FAILURE.md
+      What limits does the server put on custom environment themes a machine publishes
+      (how many files, how big each one, and in total), and why? Name the file. Don't
+      change anything.
+    expect: ["\\b32\\b[^\\n]{0,40}(files|themes)|(files|themes)[^\\n]{0,40}\\b32\\b", "32\\s*(KB|KiB|kB)|32 \\* 1024|32768", "192\\s*(KB|KiB|kB)|192 \\* 1024|196608", "environmentTheme\\.ts"]
+
+  - name: update-trial-timeout
+    prompt: >
+      During a server self-update, the new runtime runs as a trial before it is committed.
+      How long does the trial have to report that it is prepared before the launcher gives
+      up, and what happens then? Point me to where that timeout is defined. Don't change
+      anything.
+    expect: ["120\\s*(s|seconds)|2 minutes|120000|120_000", "roll(s|ed)? ?back|old version|previous version", "serviceLauncher\\.ts"]
+
+  # Broad tasks: the answer spans many files, like the exploration-heavy sessions in real use.
+  - name: terminal-output-path
+    prompt: >
+      Trace how terminal output gets from the shell process on the server to what the user
+      sees in the web app's terminal. List the main files at each hop, and tell me what
+      limits how much output is kept on the server and in the client. Don't change anything.
+    expect: ["terminal/Manager\\.ts", "ws\\.ts|OutputProtocol\\.ts", "ghostty", "5[,_]?000\\s*lines", "8\\s*MiB|8\\s*MB", "512\\s*KiB|512\\s*KB"]
+
+  - name: periodic-background-jobs
+    prompt: >
+      Which background jobs in apps/server run periodically on their own, not retries or
+      one-off backoff? For each, give the file and roughly how often it runs. Don't change
+      anything.
+    expect_min:
+      min: 4
+      patterns: ["PullRequestSyncReactor", "ThreadPullRequestReactor", "ThreadSettlementReactor", "PortScanner", "ProviderSessionReaper", "VcsStatusBroadcaster", "AttachmentUpload"]
