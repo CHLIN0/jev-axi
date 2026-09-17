@@ -208,6 +208,16 @@ cent.
   The skill is `skills/jev-axi/SKILL.md` plus `references/` (a command reference
   generated from `--help`, and a guide to writing good questions).
 
+## Data and billing
+
+Every command that asks Jev a question sends the text it judges (items, files, diffs, logs,
+fetched pages, or tool calls) to TypeSafe's API, which bills per request. Only the safety
+hook redacts credentials first and keeps routine calls local; other commands send their
+input as given, so don't point them at data you can't share with TypeSafe. Nothing
+else leaves the machine. Locally, jev-axi stores the API key (if set with `config set`),
+cached answers keyed by a hash of the request, the usage ledger (command, model, tokens,
+latency, project name, confidence bands), and the safety audit log.
+
 ## Development
 
 ```sh
