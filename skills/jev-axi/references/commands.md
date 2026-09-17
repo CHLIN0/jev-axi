@@ -157,12 +157,16 @@ examples:
 Which files a task touches.
 
 ```
-usage: jev-axi files "<task>" [dirs|paths]... [--top N] [--preview CHARS]
-Which files would a developer open or change for a task. Ranks every source file under the given dirs (default: .)
-by the start of its contents; run this before reading files yourself.
+usage: jev-axi files "<task>" [dirs|paths]... [--top N] [--preview CHARS] [--shortlist N] [--no-docs]
+Which files would a developer open or change for a task. Ranks source files under the given dirs (default: .)
+by the start of their contents; run this before reading files yourself.
+Large sets are shortlisted by path first, so only likely files are read in full. Markdown under the repository's
+docs/ directory is included automatically, since design docs often hold the answer.
 flags:
   --top <n>            rows to show (default 8)
   --preview <chars>    text per file sent to the model, after leading imports (default 700)
+  --shortlist <n>      files kept after the path-only pass when there are more than 120 (default 60)
+  --no-docs            don't add the repository's docs/ directory
 examples:
   jev-axi files "add a --json flag to the list command"
   jev-axi files "why does login redirect loop" src/ app/

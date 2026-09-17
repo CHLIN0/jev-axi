@@ -7,6 +7,7 @@ import { validation } from "../errors.js";
 import { oneLine, round } from "../format.js";
 import { estimateTokens, MAX_CHOICE_OPTIONS, STATE_TOKEN_BUDGET } from "../items.js";
 import { readImplicitStdin, readStdinSync, isStdinTTY } from "../stdin.js";
+import { mapLimit, requestConcurrency } from "../concurrency.js";
 import { evalOptions, finish, quote, thresholdsFrom } from "./common.js";
 
 export const FIND_HELP = `usage: jev-axi find "<question>" <file|-> [--top N] [--context N]
@@ -70,10 +71,11 @@ export async function findCommand(args: string[]): Promise<AxiRenderable> {
   const results: EvalResult[] = [];
   const scored: { line: number; p: number }[] = [];
   let existsMax = 0;
-  for (const w of windows) {
-    const id = (i: number) => `L${String(w.start + i + 1).padStart(4, "0")}`;
+  const idFor = (w: { start: number }) => (i: number) => `L${String(w.start + i + 1).padStart(4, "0")}`;
+  const responses = await mapLimit(windows, requestConcurrency(), (w) => {
+    const id = idFor(w);
     const doc = w.lines.map((l, i) => `${id(i)}| ${l}`).join("\n");
-    const r = await evaluate(
+    return evaluate(
       doc,
       {
         where: {
@@ -89,6 +91,10 @@ export async function findCommand(args: string[]): Promise<AxiRenderable> {
       },
       evalOptions(p, "find"),
     );
+  });
+  for (const [wi, w] of windows.entries()) {
+    const id = idFor(w);
+    const r = responses[wi]!;
     results.push(r);
     const where = r.answers["where"] as ChoiceAnswer;
     const exists = (r.answers["exists"] as NoulAnswer).noul;

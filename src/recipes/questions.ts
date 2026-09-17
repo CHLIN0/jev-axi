@@ -89,6 +89,15 @@ export const FILES_QUESTIONS = (task: string, ids: string[]): QuestionSet => ({
   },
 });
 
+/** Pass 1 for large sets: judge files by path alone to decide which to read in full. */
+export const FILES_PATH_QUESTION = (task: string, ids: string[]): QuestionSet => ({
+  where: {
+    type: "choice",
+    instructions: `Each option is the id of a file; the state maps each id to its path in the repository. Judging only from the path (directory names and file name), which file would a developer most likely need to open for this task: ${JSON.stringify(task)}?`,
+    criteria: Object.fromEntries(ids.map((id) => [id, null])),
+  },
+});
+
 /* ------------------------------- triage -------------------------------- */
 
 export const TRIAGE_QUESTIONS = (lineIds: string[]): QuestionSet => ({

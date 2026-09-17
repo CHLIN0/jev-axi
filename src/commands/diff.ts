@@ -7,6 +7,7 @@ import { isTestPath, loadDiff, parseDiff, type FileDiff } from "../git.js";
 import { estimateTokens, STATE_TOKEN_BUDGET } from "../items.js";
 import { DIFF_OVERALL, DIFF_PER_FILE, DIFF_THRESHOLDS } from "../recipes/questions.js";
 import { isStdinTTY, readImplicitStdin, readStdinSync } from "../stdin.js";
+import { mapLimit, requestConcurrency } from "../concurrency.js";
 import { evalOptions, finish, thresholdsFrom, type Renderable } from "./common.js";
 
 export const DIFF_HELP = `usage: jev-axi diff [--staged | --range <a..b> | --file <patch> | -]
@@ -82,10 +83,13 @@ export async function diffCommand(args: string[]): Promise<Renderable> {
   const results: EvalResult[] = [];
   const verdicts: FileVerdict[] = [];
   let overall: { scope?: ScoreAnswer; kind?: ChoiceAnswer } = {};
-  for (const [ci, chunk] of chunks.entries()) {
+  const responses = await mapLimit(chunks, requestConcurrency(), (chunk, ci) => {
     const state = Object.fromEntries(chunk.map((c) => [c.id, { path: c.f.path, patch: c.patch }]));
     const questions = Object.assign({}, ...chunk.map((c) => DIFF_PER_FILE(c.id)), ci === 0 ? DIFF_OVERALL : {});
-    const r = await evaluate(state, questions, evalOptions(p, "diff"));
+    return evaluate(state, questions, evalOptions(p, "diff"));
+  });
+  for (const [ci, chunk] of chunks.entries()) {
+    const r = responses[ci]!;
     results.push(r);
     if (ci === 0) overall = { scope: r.answers["scope"] as ScoreAnswer, kind: r.answers["kind"] as ChoiceAnswer };
     for (const c of chunk) {

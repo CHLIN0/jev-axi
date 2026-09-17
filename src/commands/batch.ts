@@ -5,6 +5,7 @@ import { evaluate, type ChoiceAnswer, type EvalResult, type NoulAnswer } from ".
 import { validation } from "../errors.js";
 import { oneLine, round } from "../format.js";
 import { chunkItems, gatherItems, itemsState, type Item } from "../items.js";
+import { mapLimit, requestConcurrency } from "../concurrency.js";
 import { evalOptions, finish, quote, thresholdsFrom } from "./common.js";
 
 export const RANK_HELP = `usage: jev-axi rank "<query>" [paths|dirs|-]... [--top N] [--preview CHARS] [--min P]
@@ -53,8 +54,8 @@ export async function rankCommand(args: string[]): Promise<AxiRenderable> {
   const results: EvalResult[] = [];
   const scored: { item: Item; p: number }[] = [];
   let existsMax = 0;
-  for (const chunk of chunks) {
-    const r = await evaluate(
+  const responses = await mapLimit(chunks, requestConcurrency(), (chunk) =>
+    evaluate(
       itemsState(chunk),
       {
         where: {
@@ -68,7 +69,10 @@ export async function rankCommand(args: string[]): Promise<AxiRenderable> {
         },
       },
       evalOptions(p, "rank"),
-    );
+    ),
+  );
+  for (const [ci, chunk] of chunks.entries()) {
+    const r = responses[ci]!;
     results.push(r);
     const where = r.answers["where"] as ChoiceAnswer;
     const exists = (r.answers["exists"] as NoulAnswer).noul;
@@ -111,14 +115,17 @@ export async function filterCommand(args: string[]): Promise<AxiRenderable> {
   const chunks = chunkItems(items, 120);
   const results: EvalResult[] = [];
   const scored: { item: Item; p: number }[] = [];
-  for (const chunk of chunks) {
+  const responses = await mapLimit(chunks, requestConcurrency(), (chunk) => {
     const questions = Object.fromEntries(
       chunk.map((i) => [
         i.id,
         { type: "noul" as const, instructions: `Considering only item \`${i.id}\` in the state (its \`label\` and \`text\`): is this true of it? ${quote(q)}` },
       ]),
     );
-    const r = await evaluate(itemsState(chunk), questions, evalOptions(p, "filter"));
+    return evaluate(itemsState(chunk), questions, evalOptions(p, "filter"));
+  });
+  for (const [ci, chunk] of chunks.entries()) {
+    const r = responses[ci]!;
     results.push(r);
     for (const item of chunk) scored.push({ item, p: (r.answers[item.id] as NoulAnswer).noul });
   }
