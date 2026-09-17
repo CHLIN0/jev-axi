@@ -10,15 +10,16 @@ jobs:
       contents: read
       id-token: write   # npm provenance
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: pnpm/action-setup@v4
         with:
           version: 10
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: pnpm
-          registry-url: https://registry.npmjs.org
+          # no registry-url: setup-node would write a placeholder _authToken to .npmrc,
+          # and npm must see no token at all to use the OIDC trusted-publisher flow
       # npm >= 11.5 authenticates to npmjs.com through GitHub's OIDC token when the
       # package has this workflow registered as a trusted publisher; no secret needed.
       - run: npm install -g npm@latest
