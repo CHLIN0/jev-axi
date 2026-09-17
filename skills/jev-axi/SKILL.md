@@ -127,6 +127,10 @@ denial reason starts with `jev-axi safety check:` and names the hazard. Don't tr
 with a reworded or split-up command. Tell the user what you were trying to do and what was
 flagged, and let them run it or approve it. Only install the hook if the user asks.
 
+The same applies to `jev-axi guard-exec` (exit 126) and to a `jev_axi_pre_commit: blocked`
+message from a git hook: remove the credential rather than committing with `--no-verify`,
+unless the user tells you to.
+
 ## Acting on results
 
 Output is compact key-value text. Add `--json` when you need to parse it.

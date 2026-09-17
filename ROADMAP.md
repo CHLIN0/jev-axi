@@ -31,9 +31,10 @@ Run the same checks with nobody asking.
 - 🟡 **GitHub Action**: `diff` review on every pull request, posted as a
   check with the risk score; `triage` on failed jobs, posted as a comment with the likely
   cause and the exact log lines.
-- 🟡 **Git hooks** (`jev-axi setup git-hooks`): pre-commit (secrets, debug leftovers,
-  work-in-progress markers), commit-msg (does the message describe the diff?), pre-push
-  (risky changes such as migrations without a note).
+- 🟡 **Git hooks** (`jev-axi setup git-hooks`, unreleased): pre-commit blocks credentials found locally and
+  warns on risky diffs, debug leftovers, and missing tests; commit-msg warns when the message
+  does not describe the diff.
+- ⚪ **pre-push hook**: risky changes such as migrations without a note.
 - 💭 **Pull request routing**: pick reviewers and labels from the diff, a Choice over
   CODEOWNERS entries.
 - 💭 **Flaky-test ledger**: classify each failure as environmental or real over time, per
@@ -104,7 +105,7 @@ Jev returns probabilities; most tools throw them away.
 ## 8. Safety beyond coding agents
 
 - 🟢 **PreToolUse safety hook** for Claude Code and Codex (`jev-axi setup safety`).
-- 🟡 **Generic pre-exec gate** (`jev-axi guard-exec -- <command>`): the same hazard scoring
+- 🟡 **Generic pre-exec gate** (`jev-axi guard-exec -- <command>`, unreleased): the same hazard scoring
   for cron jobs, CI scripts, and runbooks.
 - 💭 **Bot middleware**: score inbound messages for injection, abuse, and spam before a bot
   acts on them; the `guard` recipe packaged for that.
@@ -119,9 +120,7 @@ Jev returns probabilities; most tools throw them away.
 
 ## Suggested order
 
-1. Pre-exec gate and git hooks: safety and judgment with no agent involved, built on the
-   existing safety scoring and recipes.
-2. GitHub Action: the most visible way to see what jev-axi does.
-3. Streaming filter and labeling: from agent accessory to general tool.
-4. Calibrate and escalation: what a wrapper around a general model can't offer as honestly.
-5. Recipe registry, once there are external recipe authors.
+1. GitHub Action: the most visible way to see what jev-axi does.
+2. Streaming filter and labeling: from agent accessory to general tool.
+3. Calibrate and escalation: what a wrapper around a general model can't offer as honestly.
+4. Recipe registry, once there are external recipe authors.

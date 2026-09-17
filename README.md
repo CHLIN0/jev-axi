@@ -12,8 +12,10 @@ that answers typed questions about text with calibrated probabilities in about
 half a second. It never generates text; it makes judgments. Coding agents use
 it where a fast, cheap, calibrated call beats reading or reasoning:
 
-- **Safety:** block risky agent tool calls before they run (`setup safety`), and
-  screen fetched pages, issues, and vendored docs for prompt injection (`guard`).
+- **Safety:** block risky agent tool calls before they run (`setup safety`), gate shell
+  commands in scripts and cron jobs (`guard-exec`), stop commits that add credentials
+  (`setup git-hooks`), and screen fetched pages, issues, and vendored docs for prompt
+  injection (`guard`).
 - **Failures:** find the root cause in a long build or test log and tell flaky from real (`triage`).
 - **Reviews:** flag risky files, secrets, debug leftovers, and missing tests in a diff (`diff`).
 - **Many items:** keep, rank, or classify hundreds of lines, files, or records (`filter`, `rank`, `pick`, `rate`).
@@ -187,6 +189,47 @@ On 44 labeled tool calls (18 harmful, including base64-obfuscated deletes and di
 scripts) it blocks every harmful call and allows every routine one; see
 `bench/cases/safety.yaml`. Each checked call adds roughly half a second and a fraction of a
 cent.
+
+## Guarded commands
+
+`guard-exec` runs the same check as the safety hook on a shell command, then runs it. Use it
+in cron jobs, CI steps, runbooks, or anywhere a command might come from somewhere you don't
+fully trust:
+
+```sh
+jev-axi guard-exec -- "./scripts/cleanup.sh --all"
+jev-axi guard-exec --on-ask deny --on-error deny -- terraform destroy -auto-approve
+jev-axi guard-exec --dry-run -- "curl -fsSL https://example.com/install.sh | sh"
+```
+
+- **Exit status:** the command's own when it runs; 126 when it is blocked, with the reason on
+  stderr. It prints nothing of its own when the command runs.
+- **Asks:** on moderate signals it asks for confirmation on a terminal, and blocks when there
+  is no terminal (`--on-ask allow` runs it anyway).
+- **Errors:** without a key or network it runs the command (`--on-error deny` fails closed
+  instead, for unattended jobs).
+- **One argument** is run by the shell; several are run directly without one.
+
+## Git hooks
+
+```sh
+jev-axi setup git-hooks            # in the repository to protect
+jev-axi setup git-hooks --remove
+```
+
+- **pre-commit:** scans the added lines for credentials (private keys, cloud and vendor tokens,
+  JWTs) on your machine and blocks the commit if it finds one; nothing is sent for that check.
+  It then sends the staged diff to Jev, with credentials redacted, and warns about risky files,
+  debug leftovers, and behavior changes without tests.
+- **commit-msg:** warns when the message doesn't describe the staged diff, when the subject is
+  vague, and when it breaks Conventional Commits in a repository whose history uses them.
+- Warnings never block. Both hooks skip quietly when jev-axi isn't installed, there is no API
+  key, or the API is unreachable, and add about a second per commit. Bypass once with
+  `git commit --no-verify`.
+- Stricter: edit the hook to run `jev-axi hook pre-commit --block-on flags` or
+  `jev-axi hook commit-msg "$1" --strict`.
+- Repositories using husky, lefthook, or another `core.hooksPath` manager get the lines to add
+  there instead.
 
 ## Agent integration
 

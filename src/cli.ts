@@ -15,6 +15,7 @@ import { COMMIT_HELP, commitCommand } from "./commands/commit.js";
 import { RECIPE_HELP, recipeCommand } from "./commands/recipe.js";
 import { STATS_HELP, statsCommand } from "./commands/stats.js";
 import { HOOK_HELP, hookCommand } from "./commands/hook.js";
+import { GUARD_EXEC_HELP, guardExecCommand } from "./commands/exec.js";
 export { COMMAND_TABLE } from "./commands/table.js";
 import {
   CACHE_HELP,
@@ -36,7 +37,7 @@ export const TOP_HELP = `usage: jev-axi <command> [args] [flags]
 primitives[4]: pick, rate, check, ask
 batch[3]: rank, filter, find
 recipes[6]: diff, files, triage, guard, commit, recipe
-safety[2]: setup safety, hook pre-tool-use
+safety[4]: guard-exec, setup safety, setup git-hooks, hook
 meta[7]: (none)=status, models, usage, stats, cache, config, setup
 global flags:
   --json, --full, --model <name>, --no-cache, --act <p>, --confirm <p>, --help, -v/--version
@@ -51,6 +52,7 @@ examples:
   jev-axi diff --staged
   npm test 2>&1 | jev-axi triage
   curl -s <url> | jev-axi guard
+  jev-axi guard-exec -- "./scripts/deploy.sh prod"
   jev-axi usage --by day
 `;
 
@@ -71,6 +73,7 @@ export const HELP: Record<string, string> = {
   stats: STATS_HELP,
   cache: CACHE_HELP,
   hook: HOOK_HELP,
+  "guard-exec": GUARD_EXEC_HELP,
   models: MODELS_HELP,
   usage: USAGE_HELP,
   config: CONFIG_HELP,
@@ -92,14 +95,24 @@ export function formatError(error: unknown): { output: string; exitCode: number 
 }
 
 export async function main(argv = process.argv.slice(2), stdout?: { write: (chunk: string) => unknown }): Promise<void> {
+  const target = (stdout ?? process.stdout) as { write: (chunk: string) => unknown; on?: (...args: any[]) => unknown };
+  // Commands that print nothing (hooks, guard-exec running a command) must not add a blank line
+  // to output that belongs to someone else.
+  const sink = {
+    write: (chunk: string) => (chunk === "\n" ? true : target.write(chunk)),
+    ...(target.on ? { on: (...args: any[]) => target.on!(...args) } : {}),
+  };
+  // `jev-axi guard-exec -- ls --help`: a --help after -- belongs to the wrapped command.
+  const sep = argv.indexOf("--");
+  const helpOnlyAfterSeparator = sep !== -1 && !argv.slice(0, sep).includes("--help");
   await runAxiCli({
     description: DESCRIPTION,
     version: VERSION,
     packageName: "jev-axi",
     argv,
-    ...(stdout ? { stdout } : {}),
+    stdout: sink,
     topLevelHelp: TOP_HELP,
-    getCommandHelp: (command) => HELP[command],
+    getCommandHelp: (command) => (helpOnlyAfterSeparator ? undefined : HELP[command]),
     formatError,
     home: wrap(() => homeCommand()),
     commands: {
@@ -119,6 +132,7 @@ export async function main(argv = process.argv.slice(2), stdout?: { write: (chun
       stats: wrap(statsCommand),
       cache: wrap(cacheCommand),
       hook: wrap(hookCommand),
+      "guard-exec": wrap(guardExecCommand),
       models: wrap(modelsCommand),
       usage: wrap(usageCommand),
       config: wrap(configCommand),

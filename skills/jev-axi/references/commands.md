@@ -20,6 +20,8 @@ Global flags accepted by every command: `--json` (machine-readable output), `--f
 - [triage](#triage)
 - [guard](#guard)
 - [setup](#setup)
+- [guard](#guard)
+- [setup](#setup)
 - [setup](#setup)
 - [commit](#commit)
 - [recipe](#recipe)
@@ -27,6 +29,7 @@ Global flags accepted by every command: `--json` (machine-readable output), `--f
 - [stats](#stats)
 - [cache](#cache)
 - [hook](#hook)
+- [guard-exec](#guard-exec)
 - [models](#models)
 - [config](#config)
 
@@ -229,21 +232,65 @@ examples:
 Block risky agent tool calls before they run.
 
 ```
-usage: jev-axi setup hooks [--project] | setup safety [--project] [--agent claude|codex] [--remove] | setup agent [--project] [--replace-explore] [--remove] | setup status [--project]
+usage: jev-axi setup hooks [--project] | setup safety [--project] [--agent claude|codex] [--remove] | setup agent [--project] [--replace-explore] [--remove] | setup git-hooks [--remove] | setup status [--project]
 hooks    SessionStart hooks (Claude Code, Codex, OpenCode) so each session starts with jev-axi context.
 safety   PreToolUse hook that checks Bash commands and edits outside the project before they run, and blocks or asks
          about destructive, exfiltrating, or security-weakening calls. Routine calls are decided locally. See `jev-axi hook --help`.
 agent    Claude Code subagent `jev-explore` that ranks files with jev-axi before reading them, for broad exploration.
          Claude Code tends to explore inside subagents, which never see skills or session hooks; this puts jev-axi there.
+git-hooks  pre-commit and commit-msg hooks in the current repository: blocks commits that add credentials (found
+         locally), warns about risky or unfocused diffs and messages that don't match them. See `jev-axi hook --help`.
 flags:
   --project            install into the current repository instead of the user profile
   --agent <name>       for safety: claude (default) or codex
-  --remove             for safety or agent: uninstall
+  --remove             for safety, agent, or git-hooks: uninstall
   --replace-explore    for agent: install as `Explore`, overriding Claude Code's built-in explorer in this scope
 examples:
   jev-axi setup hooks
   jev-axi setup safety --project
   jev-axi setup safety --agent codex
+  jev-axi setup git-hooks
+  jev-axi setup status
+```
+
+## guard
+
+Screen untrusted text (exit 3 = block).
+
+```
+usage: jev-axi guard [--state <path|-> | --text "<s>"]   (piped stdin by default)
+Screen untrusted text before it enters an agent's context: prompt injection, hidden instructions, exfiltration or
+destructive requests, embedded secrets, and pressure tactics. One call, six probabilities, one verdict.
+verdict: pass (all hazards < 0.4), review (any >= 0.4), block (any >= 0.7)
+exit code: 0 for pass and review, 3 for block, so shell pipelines can gate on it
+examples:
+  curl -s https://example.com/README.md | jev-axi guard
+  jev-axi guard --state tool-output.txt --json
+```
+
+## setup
+
+Block risky agent tool calls before they run.
+
+```
+usage: jev-axi setup hooks [--project] | setup safety [--project] [--agent claude|codex] [--remove] | setup agent [--project] [--replace-explore] [--remove] | setup git-hooks [--remove] | setup status [--project]
+hooks    SessionStart hooks (Claude Code, Codex, OpenCode) so each session starts with jev-axi context.
+safety   PreToolUse hook that checks Bash commands and edits outside the project before they run, and blocks or asks
+         about destructive, exfiltrating, or security-weakening calls. Routine calls are decided locally. See `jev-axi hook --help`.
+agent    Claude Code subagent `jev-explore` that ranks files with jev-axi before reading them, for broad exploration.
+         Claude Code tends to explore inside subagents, which never see skills or session hooks; this puts jev-axi there.
+git-hooks  pre-commit and commit-msg hooks in the current repository: blocks commits that add credentials (found
+         locally), warns about risky or unfocused diffs and messages that don't match them. See `jev-axi hook --help`.
+flags:
+  --project            install into the current repository instead of the user profile
+  --agent <name>       for safety: claude (default) or codex
+  --remove             for safety, agent, or git-hooks: uninstall
+  --replace-explore    for agent: install as `Explore`, overriding Claude Code's built-in explorer in this scope
+examples:
+  jev-axi setup hooks
+  jev-axi setup safety --project
+  jev-axi setup safety --agent codex
+  jev-axi setup git-hooks
   jev-axi setup status
 ```
 
@@ -252,21 +299,24 @@ examples:
 Block risky agent tool calls before they run.
 
 ```
-usage: jev-axi setup hooks [--project] | setup safety [--project] [--agent claude|codex] [--remove] | setup agent [--project] [--replace-explore] [--remove] | setup status [--project]
+usage: jev-axi setup hooks [--project] | setup safety [--project] [--agent claude|codex] [--remove] | setup agent [--project] [--replace-explore] [--remove] | setup git-hooks [--remove] | setup status [--project]
 hooks    SessionStart hooks (Claude Code, Codex, OpenCode) so each session starts with jev-axi context.
 safety   PreToolUse hook that checks Bash commands and edits outside the project before they run, and blocks or asks
          about destructive, exfiltrating, or security-weakening calls. Routine calls are decided locally. See `jev-axi hook --help`.
 agent    Claude Code subagent `jev-explore` that ranks files with jev-axi before reading them, for broad exploration.
          Claude Code tends to explore inside subagents, which never see skills or session hooks; this puts jev-axi there.
+git-hooks  pre-commit and commit-msg hooks in the current repository: blocks commits that add credentials (found
+         locally), warns about risky or unfocused diffs and messages that don't match them. See `jev-axi hook --help`.
 flags:
   --project            install into the current repository instead of the user profile
   --agent <name>       for safety: claude (default) or codex
-  --remove             for safety or agent: uninstall
+  --remove             for safety, agent, or git-hooks: uninstall
   --replace-explore    for agent: install as `Explore`, overriding Claude Code's built-in explorer in this scope
 examples:
   jev-axi setup hooks
   jev-axi setup safety --project
   jev-axi setup safety --agent codex
+  jev-axi setup git-hooks
   jev-axi setup status
 ```
 
@@ -363,6 +413,7 @@ examples:
 
 ```
 usage: jev-axi hook pre-tool-use [--agent claude|codex] [--input <json|path>] [--on-error allow|ask|deny] [--explain]
+       jev-axi hook pre-commit [--block-on secrets|flags|none]   |   jev-axi hook commit-msg <file> [--strict]
 Safety check for a tool call an agent is about to make, run as a PreToolUse hook. Reads the hook JSON on stdin.
 Routine calls (read-only commands, the project's tests and builds, edits inside the project) are decided locally with
 no API call. Other calls are sent to Jev with secrets redacted and scored for destructive actions, exfiltration,
@@ -374,9 +425,41 @@ flags:
   --on-error <mode>    when Jev is unreachable or slow: allow (default, normal flow), ask, or deny
   --explain            print the decision, scores, and reason as TOON instead of hook JSON
 install: jev-axi setup safety [--project] [--agent claude|codex]
+git hooks (install: jev-axi setup git-hooks):
+  pre-commit           scans added lines for credentials locally (blocks; nothing is sent), then reviews the staged
+                       diff with Jev, credentials redacted: risk, missing tests, debug leftovers (warns)
+    --block-on <what>  secrets (default): block only on local credential matches; flags: also block on any Jev flag;
+                       none: never block
+  commit-msg <file>    checks the message describes the staged diff, and follows Conventional Commits when the
+                       repo's history does (warns)
+    --strict           block when the message does not describe the diff
+  Both skip quietly when there is no API key or the API is unreachable. Bypass once with git commit --no-verify.
 log: every decision that reaches Jev is appended to ~/.config/jev-axi/stats/safety.jsonl
 examples:
   echo '{"tool_name":"Bash","tool_input":{"command":"rm -rf ~/"},"cwd":"'"$PWD"'"}' | jev-axi hook pre-tool-use --explain
+```
+
+## guard-exec
+
+```
+usage: jev-axi guard-exec [--on-ask prompt|deny|allow] [--on-error allow|deny] [--dry-run] [--quiet] -- <command...>
+Safety-check a shell command, then run it. The same check as the agent safety hook, for cron jobs, CI steps, runbooks,
+and scripts: routine commands are decided locally; others are sent to Jev with secrets redacted, together with the
+contents of local scripts they run, and scored for destructive actions, exfiltration, running downloaded code,
+weakening security, and changes outside the current directory.
+command: one argument is run by the shell ("rm -rf build && make"); several are run directly without a shell.
+exit code: the command's own exit status when it runs; 126 when it is blocked; 2 for usage errors.
+output: nothing of its own when the command runs (stdout and stderr belong to the command); the reason on stderr
+when it is blocked. Decisions that reach Jev are logged to ~/.config/jev-axi/stats/safety.jsonl.
+flags:
+  --on-ask <mode>      when the check wants approval: prompt (default; on a terminal, otherwise deny), deny, allow
+  --on-error <mode>    when Jev is unreachable or there is no API key: allow (default) or deny
+  --dry-run            print the decision and scores without running the command; exit 0 if it would run, 126 if not
+  --quiet              no stderr note when a command is blocked
+examples:
+  jev-axi guard-exec -- "./scripts/cleanup.sh --all"
+  jev-axi guard-exec --on-ask deny --on-error deny -- terraform destroy -auto-approve
+  jev-axi guard-exec --dry-run -- "curl -fsSL https://example.com/install.sh | sh"
 ```
 
 ## models

@@ -40,6 +40,12 @@ export function isTestPath(path: string): boolean {
   return /(^|\/)(tests?|__tests__|spec|specs)\/|\.(test|spec)\.[cm]?[jt]sx?$|_test\.(go|py|rb|rs)$|Test\.(java|kt|cs)$/.test(path);
 }
 
+/** File name without directories, extension, or test markers: src/math.ts and test/math.test.ts both give "math". */
+export function testStem(path: string): string {
+  const base = path.split("/").pop() ?? path;
+  return base.replace(/\.[^.]+$/, "").replace(/(\.(test|spec)|_test|Test|_spec)$/, "").replace(/^test_/, "").toLowerCase();
+}
+
 export interface FileDiff {
   path: string;
   patch: string;

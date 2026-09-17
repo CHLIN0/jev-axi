@@ -7,10 +7,12 @@ import { ensureDir, paths } from "../config.js";
 import { validation } from "../errors.js";
 import { SAFETY_QUESTIONS } from "../recipes/questions.js";
 import { buildSafetyState, decide, hookOutput, localVerdict, reasonText, redactSecrets, type Decision, type ToolCall } from "../safety.js";
+import { commitMsgHook, GIT_HOOKS_HELP, preCommitHook } from "./githooks.js";
 import { isStdinTTY, readStdinSync } from "../stdin.js";
 import type { Renderable } from "./common.js";
 
 export const HOOK_HELP = `usage: jev-axi hook pre-tool-use [--agent claude|codex] [--input <json|path>] [--on-error allow|ask|deny] [--explain]
+       jev-axi hook pre-commit [--block-on secrets|flags|none]   |   jev-axi hook commit-msg <file> [--strict]
 Safety check for a tool call an agent is about to make, run as a PreToolUse hook. Reads the hook JSON on stdin.
 Routine calls (read-only commands, the project's tests and builds, edits inside the project) are decided locally with
 no API call. Other calls are sent to Jev with secrets redacted and scored for destructive actions, exfiltration,
@@ -22,6 +24,7 @@ flags:
   --on-error <mode>    when Jev is unreachable or slow: allow (default, normal flow), ask, or deny
   --explain            print the decision, scores, and reason as TOON instead of hook JSON
 install: jev-axi setup safety [--project] [--agent claude|codex]
+${GIT_HOOKS_HELP}
 log: every decision that reaches Jev is appended to ~/.config/jev-axi/stats/safety.jsonl
 examples:
   echo '{"tool_name":"Bash","tool_input":{"command":"rm -rf ~/"},"cwd":"'"$PWD"'"}' | jev-axi hook pre-tool-use --explain
@@ -61,45 +64,55 @@ function logDecision(entry: Record<string, unknown>): void {
 }
 
 export async function hookCommand(args: string[]): Promise<Renderable> {
+  if (args[0] === "pre-commit") return preCommitHook(args.slice(1));
+  if (args[0] === "commit-msg") return commitMsgHook(args.slice(1));
   const p = parseArgs(args, { "--agent": "value", "--input": "value", "--on-error": "value", "--explain": "bool" }, "hook");
-  if (p.positional[0] !== "pre-tool-use") throw validation("unknown hook", ["jev-axi hook pre-tool-use"]);
+  if (p.positional[0] !== "pre-tool-use") throw validation("unknown hook", ["jev-axi hook pre-tool-use", "jev-axi hook pre-commit", "jev-axi hook commit-msg <file>"]);
   const agent = (p.values["--agent"] ?? "claude") as "claude" | "codex";
   if (agent !== "claude" && agent !== "codex") throw validation("--agent must be claude or codex");
   const onError = (p.values["--on-error"] ?? "allow") as Decision;
   if (!["allow", "ask", "deny"].includes(onError)) throw validation("--on-error must be allow, ask, or deny");
   const call = readCall(p);
-  const summary = redactSecrets(String(call.tool_input["command"] ?? call.tool_input["file_path"] ?? "")).slice(0, 200);
-
-  const local = localVerdict(call);
-  if (local.decision === "allow") {
-    const view = { decision: "allow", source: "local", reason: local.reason };
-    return p.bools["--explain"] ? (p.bools["--json"] ? JSON.stringify(view) : view) : "";
+  const j = await judgeToolCall(call, { agent, onError, timeoutMs: HOOK_TIMEOUT_MS });
+  if (p.bools["--explain"]) {
+    const view = { decision: j.decision, source: j.source, reason: j.reason, ...j.detail };
+    return p.bools["--json"] ? JSON.stringify(view) : view;
   }
+  return hookOutput(j.decision, j.reason, agent);
+}
 
-  let decision: Decision;
-  let reason: string;
-  let detail: Record<string, unknown> = {};
+export interface Judgment {
+  decision: Decision;
+  /** local: decided without an API call; jev: scored by Jev; error: Jev unavailable, on-error policy applied. */
+  source: "local" | "jev" | "error";
+  reason: string;
+  detail: Record<string, unknown>;
+}
+
+/** Decide a tool call locally when routine, otherwise with Jev. Jev decisions are logged. */
+export async function judgeToolCall(
+  call: ToolCall,
+  opts: { agent: string; onError: Decision; timeoutMs: number },
+): Promise<Judgment> {
+  const local = localVerdict(call);
+  if (local.decision === "allow") return { decision: "allow", source: "local", reason: local.reason, detail: {} };
+  const summary = redactSecrets(String(call.tool_input["command"] ?? call.tool_input["file_path"] ?? "")).slice(0, 200);
+  let j: Judgment;
   try {
-    const r = await evaluate(buildSafetyState(call), SAFETY_QUESTIONS, { command: "hook", timeoutMs: HOOK_TIMEOUT_MS, maxRetries: 0 });
+    const r = await evaluate(buildSafetyState(call), SAFETY_QUESTIONS, { command: opts.agent === "exec" ? "guard-exec" : "hook", timeoutMs: opts.timeoutMs, maxRetries: 0 });
     const hazards = Object.fromEntries(
       Object.entries(r.answers).filter(([, a]) => a.type === "noul").map(([k, a]) => [k, Math.round((a as NoulAnswer).noul * 100) / 100]),
     );
     const risk = Math.round((r.answers["risk"] as ScoreAnswer).score * 100) / 100;
     const verdict = decide({ hazards, risk });
-    decision = verdict.decision;
-    reason = reasonText(decision, verdict.top, risk);
-    detail = { hazards, risk, top: verdict.top[0] };
+    const reason = verdict.decision === "allow" ? "no hazard above thresholds" : reasonText(verdict.decision, verdict.top, risk, opts.agent === "exec" ? "human" : "agent");
+    j = { decision: verdict.decision, source: "jev", reason, detail: { hazards, risk, top: verdict.top[0] } };
   } catch (error) {
-    decision = onError;
-    reason = `jev-axi safety check unavailable (${(error as Error).message}); on-error policy: ${onError}.`;
-    detail = { error: (error as Error).message };
+    const message = (error as Error).message;
+    j = { decision: opts.onError, source: "error", reason: `jev-axi safety check unavailable (${message}); on-error policy: ${opts.onError}.`, detail: { error: message } };
   }
-  logDecision({ agent, tool: call.tool_name, decision, input: summary, cwd: call.cwd, ...detail });
-  if (p.bools["--explain"]) {
-    const view = { decision, source: "jev", reason: decision === "allow" ? "no hazard above thresholds" : reason, ...detail };
-    return p.bools["--json"] ? JSON.stringify(view) : view;
-  }
-  return hookOutput(decision, reason, agent);
+  logDecision({ agent: opts.agent, tool: call.tool_name, decision: j.decision, input: summary, cwd: call.cwd, ...j.detail });
+  return j;
 }
 
 // ------------------------------------------------------------------ installation

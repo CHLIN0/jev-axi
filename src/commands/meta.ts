@@ -1,5 +1,6 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { configureAgent } from "./agent.js";
+import { configureGitHooks } from "./githooks.js";
 import { configureSafetyHook, safetyHookPath as configureSafetyHookPath, SAFETY_HOOK_COMMAND } from "./hook.js";
 import type { Renderable as AxiRenderable } from "./common.js";
 import { AxiError, installSessionStartHooks, sessionStartHookStatus } from "axi-sdk-js";
@@ -202,21 +203,24 @@ function statsView(): Record<string, unknown> {
   };
 }
 
-export const SETUP_HELP = `usage: jev-axi setup hooks [--project] | setup safety [--project] [--agent claude|codex] [--remove] | setup agent [--project] [--replace-explore] [--remove] | setup status [--project]
+export const SETUP_HELP = `usage: jev-axi setup hooks [--project] | setup safety [--project] [--agent claude|codex] [--remove] | setup agent [--project] [--replace-explore] [--remove] | setup git-hooks [--remove] | setup status [--project]
 hooks    SessionStart hooks (Claude Code, Codex, OpenCode) so each session starts with jev-axi context.
 safety   PreToolUse hook that checks Bash commands and edits outside the project before they run, and blocks or asks
          about destructive, exfiltrating, or security-weakening calls. Routine calls are decided locally. See \`jev-axi hook --help\`.
 agent    Claude Code subagent \`jev-explore\` that ranks files with jev-axi before reading them, for broad exploration.
          Claude Code tends to explore inside subagents, which never see skills or session hooks; this puts jev-axi there.
+git-hooks  pre-commit and commit-msg hooks in the current repository: blocks commits that add credentials (found
+         locally), warns about risky or unfocused diffs and messages that don't match them. See \`jev-axi hook --help\`.
 flags:
   --project            install into the current repository instead of the user profile
   --agent <name>       for safety: claude (default) or codex
-  --remove             for safety or agent: uninstall
+  --remove             for safety, agent, or git-hooks: uninstall
   --replace-explore    for agent: install as \`Explore\`, overriding Claude Code's built-in explorer in this scope
 examples:
   jev-axi setup hooks
   jev-axi setup safety --project
   jev-axi setup safety --agent codex
+  jev-axi setup git-hooks
   jev-axi setup status
 `;
 
@@ -249,6 +253,10 @@ export async function setupCommand(args: string[]): Promise<AxiRenderable> {
       : [];
     return { agent: { status, scope, file }, ...(help.length ? { help } : {}) };
   }
+  if (action === "git-hooks") {
+    const { dir, hooks, help } = configureGitHooks(p.bools["--remove"]);
+    return { git_hooks: { dir, hooks }, ...(help.length ? { help } : {}) };
+  }
   if (action === "status") {
     const s = sessionStartHookStatus({ scope });
     const safetyFile = (agent: "claude" | "codex") => {
@@ -264,7 +272,7 @@ export async function setupCommand(args: string[]): Promise<AxiRenderable> {
       safety: { scope, claude: safetyFile("claude"), codex: safetyFile("codex") },
     };
   }
-  throw new AxiError("Unknown setup action", "VALIDATION_ERROR", ["Run `jev-axi setup hooks`, `jev-axi setup safety`, `jev-axi setup agent`, or `jev-axi setup status`"]);
+  throw new AxiError("Unknown setup action", "VALIDATION_ERROR", ["Run `jev-axi setup hooks`, `jev-axi setup safety`, `jev-axi setup agent`, `jev-axi setup git-hooks`, or `jev-axi setup status`"]);
 }
 
 export function todayUsageLine(): string {

@@ -1,9 +1,10 @@
 import { parseArgs } from "../args.js";
 import { bandForConfidence } from "../bands.js";
-import { evaluate, type ChoiceAnswer, type EvalResult, type NoulAnswer, type ScoreAnswer } from "../client.js";
+import { evaluate, type ChoiceAnswer, type EvalOptions, type EvalResult, type NoulAnswer, type ScoreAnswer } from "../client.js";
+import type { Thresholds } from "../config.js";
 import { validation } from "../errors.js";
 import { round } from "../format.js";
-import { isTestPath, loadDiff, parseDiff, type FileDiff } from "../git.js";
+import { isTestPath, loadDiff, parseDiff, testStem, type FileDiff } from "../git.js";
 import { estimateTokens, STATE_TOKEN_BUDGET } from "../items.js";
 import { DIFF_OVERALL, DIFF_PER_FILE, DIFF_THRESHOLDS } from "../recipes/questions.js";
 import { isStdinTTY, readImplicitStdin, readStdinSync } from "../stdin.js";
@@ -24,7 +25,7 @@ examples:
   git diff HEAD~3 | jev-axi diff -
 `;
 
-interface FileVerdict {
+export interface FileVerdict {
   file: string;
   "+/-": string;
   risk: number;
@@ -56,10 +57,48 @@ export async function diffCommand(args: string[]): Promise<Renderable> {
     const next = label === "working tree changes" ? ["Run `jev-axi diff --staged` for staged changes or `--range main..HEAD` for commits"] : label === "staged changes" ? ["Run `jev-axi diff` for unstaged working-tree changes"] : [];
     return finish(p, { diff: label, files: "0 changed files; nothing to review" }, [], next);
   }
-  const t = thresholdsFrom(p);
+  const review = await reviewFiles(files, evalOptions(p, "diff"), thresholdsFrom(p));
+  const { verdicts, flagged, overall, results, chunks, testFiles, scopeLevel, verdict } = review;
+  const shown = p.bools["--full"] ? verdicts : flagged.length ? flagged : verdicts.slice(0, 5);
+  const scopeLabel = ["focused", "mostly focused", "several unrelated changes"][scopeLevel];
+  const secretsHit = verdict === "block";
+
+  const out: Record<string, unknown> = {
+    diff: label,
+    verdict,
+    kind: overall.kind ? `${overall.kind.choice} (${round(overall.kind.confidence)})` : "unknown",
+    scope: overall.scope ? `${scopeLabel} (${round(overall.scope.score)} of 0..2)` : "unknown",
+    count: `${flagged.length} flagged of ${files.length} files (${testFiles} test files)${chunks > 1 ? ` in ${chunks} calls` : ""}`,
+    files: shown,
+  };
+  const help: string[] = [];
+  if (secretsHit) help.push("A file appears to add a real credential; remove it before committing");
+  if (flagged.some((v) => v.flags.includes("needs-test"))) help.push("needs-test: behavior changed with no test change in the diff");
+  if (scopeLevel === 2) help.push("Consider splitting this into separate commits or PRs");
+  if (!p.bools["--full"] && shown.length < verdicts.length) help.push(`Add --full to see all ${verdicts.length} files`);
+  return finish(p, out, results, help);
+}
+
+export interface DiffReview {
+  verdicts: FileVerdict[];
+  flagged: FileVerdict[];
+  overall: { scope?: ScoreAnswer; kind?: ChoiceAnswer };
+  results: EvalResult[];
+  chunks: number;
+  testFiles: number;
+  /** 0 focused, 1 mostly focused, 2 several unrelated changes. */
+  scopeLevel: number;
+  /** block when a file appears to add a credential, review when anything is flagged. */
+  verdict: "ok" | "review" | "block";
+}
+
+/** Review parsed file diffs: per-file risk and flags plus overall scope and kind, highest risk first. */
+export async function reviewFiles(files: FileDiff[], options: EvalOptions, t: Thresholds): Promise<DiffReview> {
   // When the diff carries test files, a source file's tests are probably among them, so the
   // per-file "no test in this patch" signal is weaker; require a stronger noul before flagging.
   const testFiles = files.filter((f) => isTestPath(f.path)).length;
+  // A source file whose matching test file is in the same diff is covered, whatever its own patch says.
+  const testedStems = new Set(files.filter((f) => isTestPath(f.path)).map((f) => testStem(f.path)));
   const needsTestFlag = testFiles > 0 ? DIFF_THRESHOLDS.flagWhenTestsPresent : DIFF_THRESHOLDS.flag;
 
   // Chunk files to the budget, truncating oversized patches.
@@ -69,24 +108,24 @@ export async function diffCommand(args: string[]): Promise<Renderable> {
   let tokens = 0;
   for (const item of prepared) {
     // Each file also carries five questions (~180 tokens of instructions).
-    const t = estimateTokens(item.patch) + 200;
-    if (cur.length && tokens + t > STATE_TOKEN_BUDGET) {
+    const size = estimateTokens(item.patch) + 200;
+    if (cur.length && tokens + size > STATE_TOKEN_BUDGET) {
       chunks.push(cur);
       cur = [];
       tokens = 0;
     }
     cur.push(item);
-    tokens += t;
+    tokens += size;
   }
   if (cur.length) chunks.push(cur);
 
   const results: EvalResult[] = [];
   const verdicts: FileVerdict[] = [];
-  let overall: { scope?: ScoreAnswer; kind?: ChoiceAnswer } = {};
+  let overall: DiffReview["overall"] = {};
   const responses = await mapLimit(chunks, requestConcurrency(), (chunk, ci) => {
     const state = Object.fromEntries(chunk.map((c) => [c.id, { path: c.f.path, patch: c.patch }]));
     const questions = Object.assign({}, ...chunk.map((c) => DIFF_PER_FILE(c.id)), ci === 0 ? DIFF_OVERALL : {});
-    return evaluate(state, questions, evalOptions(p, "diff"));
+    return evaluate(state, questions, options);
   });
   for (const [ci, chunk] of chunks.entries()) {
     const r = responses[ci]!;
@@ -97,7 +136,7 @@ export async function diffCommand(args: string[]): Promise<Renderable> {
       const noul = (k: string) => (r.answers[`${c.id}.${k}`] as NoulAnswer).noul;
       const flags: string[] = [];
       if (noul("secrets") >= DIFF_THRESHOLDS.flag) flags.push("secrets");
-      if (!isTestPath(c.f.path) && noul("needs_test") >= needsTestFlag) flags.push("needs-test");
+      if (!isTestPath(c.f.path) && !testedStems.has(testStem(c.f.path)) && noul("needs_test") >= needsTestFlag) flags.push("needs-test");
       if (noul("leftovers") >= DIFF_THRESHOLDS.flag) flags.push("leftovers");
       if (risk.score >= DIFF_THRESHOLDS.highRisk) flags.push("high-risk");
       verdicts.push({
@@ -111,26 +150,9 @@ export async function diffCommand(args: string[]): Promise<Renderable> {
   }
   verdicts.sort((a, b) => b.risk - a.risk);
   const flagged = verdicts.filter((v) => v.flags !== "-");
-  const shown = p.bools["--full"] ? verdicts : flagged.length ? flagged : verdicts.slice(0, 5);
   const scopeLevel = overall.scope ? Math.min(2, Math.max(0, Math.round(overall.scope.score))) : 0;
-  const scopeLabel = ["focused", "mostly focused", "several unrelated changes"][scopeLevel];
-  const secretsHit = verdicts.some((v) => v.flags.includes("secrets"));
-  const verdict = secretsHit ? "block" : flagged.length ? "review" : "ok";
-
-  const out: Record<string, unknown> = {
-    diff: label,
-    verdict,
-    kind: overall.kind ? `${overall.kind.choice} (${round(overall.kind.confidence)})` : "unknown",
-    scope: overall.scope ? `${scopeLabel} (${round(overall.scope.score)} of 0..2)` : "unknown",
-    count: `${flagged.length} flagged of ${files.length} files (${testFiles} test files)${chunks.length > 1 ? ` in ${chunks.length} calls` : ""}`,
-    files: shown,
-  };
-  const help: string[] = [];
-  if (secretsHit) help.push("A file appears to add a real credential; remove it before committing");
-  if (flagged.some((v) => v.flags.includes("needs-test"))) help.push("needs-test: behavior changed with no test change in the diff");
-  if (scopeLevel === 2) help.push("Consider splitting this into separate commits or PRs");
-  if (!p.bools["--full"] && shown.length < verdicts.length) help.push(`Add --full to see all ${verdicts.length} files`);
-  return finish(p, out, results, help);
+  const verdict = verdicts.some((v) => v.flags.includes("secrets")) ? "block" : flagged.length ? "review" : "ok";
+  return { verdicts, flagged, overall, results, chunks: chunks.length, testFiles, scopeLevel, verdict };
 }
 
 function truncatePatch(f: FileDiff): string {

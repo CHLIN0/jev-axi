@@ -29,6 +29,9 @@ export interface LocalVerdict {
 
 // ------------------------------------------------------------------ redaction
 
+/** Patterns specific enough that a match is almost certainly a real credential. */
+const STRONG_SECRET_COUNT = 8;
+
 const SECRET_PATTERNS: [RegExp, string][] = [
   [/-----BEGIN [A-Z ]*PRIVATE KEY-----[\s\S]*?-----END [A-Z ]*PRIVATE KEY-----/g, "[REDACTED PRIVATE KEY]"],
   [/\b(sk|rk|pk)_(live|test)_[A-Za-z0-9]{10,}/g, "[REDACTED STRIPE KEY]"],
@@ -42,6 +45,15 @@ const SECRET_PATTERNS: [RegExp, string][] = [
   [/([a-z][a-z0-9+.-]*:\/\/[^:\s/@]+:)[^@\s]+@/gi, "$1[REDACTED]@"],
   [/\b([A-Z0-9_]*(?:PASSWORD|PASSWD|SECRET|TOKEN|API_?KEY|PRIVATE_KEY|ACCESS_KEY)[A-Z0-9_]*\s*[=:]\s*)(?!\[REDACTED)("[^"]*"|'[^']*'|[^\s'";&|]+)/gi, "$1[REDACTED]"],
 ];
+
+/** Credentials matched by the specific patterns (private keys, vendor token formats, JWTs). */
+export function findStrongSecrets(text: string): string[] {
+  const kinds: string[] = [];
+  for (const [re, replacement] of SECRET_PATTERNS.slice(0, STRONG_SECRET_COUNT)) {
+    if (new RegExp(re.source, re.flags.replace("g", "")).test(text)) kinds.push(replacement.replace(/^\[REDACTED |\]$/g, "").toLowerCase());
+  }
+  return kinds;
+}
 
 /** Replace credential-looking values so they are never sent off the machine. */
 export function redactSecrets(text: string): string {
@@ -230,9 +242,10 @@ const HAZARD_TEXT: Record<string, string> = {
   outside_project: "changing files or state outside the project",
 };
 
-export function reasonText(decision: Decision, top: [string, number], risk: number): string {
+export function reasonText(decision: Decision, top: [string, number], risk: number, audience: "agent" | "human" = "agent"): string {
   const what = HAZARD_TEXT[top[0]] ?? top[0];
   const head = `jev-axi safety check: likely ${what} (p=${top[1].toFixed(2)}, risk ${risk.toFixed(1)} of 2).`;
+  if (audience === "human") return decision === "deny" ? `${head} Blocked; run it directly if you are sure it is intended.` : `${head} Needs confirmation.`;
   return decision === "deny"
     ? `${head} Blocked. If this is really intended, explain it to the user and let them run it or approve it themselves.`
     : `${head} Needs explicit user approval before running.`;
