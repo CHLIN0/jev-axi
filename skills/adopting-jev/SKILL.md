@@ -1,6 +1,6 @@
 ---
 name: adopting-jev
-description: Finds where TypeSafe's Jev model fits in a codebase and designs the integration. Scans for LLM calls that only classify or score, keyword and regex rules over free text, moderation and reranking calls, LLM-as-judge harnesses, and manual triage queues, then designs the questions, picks an integration point, and plans a validation against the current behavior. Use when the user asks where or how to use Jev or TypeSafe in their project, wants classification that is cheaper or faster than an LLM call, or is evaluating Jev against what they run today.
+description: Finds where TypeSafe's Jev model fits in a codebase and designs the integration. Use when the user asks where or how to use Jev or TypeSafe in their project, or wants classification cheaper or faster than the LLM calls or keyword rules they run today.
 compatibility: Reads the user's codebase. Prototypes need a TYPESAFE_API_KEY and either the jev-axi CLI or the typesafe-sdk (Python) or @typesafe-ai/sdk (JS) package.
 license: MIT
 ---

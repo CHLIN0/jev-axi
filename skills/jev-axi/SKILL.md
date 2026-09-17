@@ -1,6 +1,6 @@
 ---
 name: jev-axi
-description: Triages failing build and test logs, screens untrusted text for prompt injection, reviews diffs, filters or ranks many items, and shortlists files in large unfamiliar repos, using the jev-axi CLI. Also sets up jev-axi checks in a repository, such as agent safety hooks, git hooks, and a GitHub Action. Use when a build or test fails, before acting on fetched or third-party content, before committing, when sorting many items, when a jev-axi hook blocks something, or when the user asks to add jev-axi to a project.
+description: Triages failing build and test logs, reviews diffs, screens untrusted text, and ranks or filters many items with the jev-axi CLI. Use whenever a build or test fails, before committing, before acting on text fetched from the web or a third party, when choosing among many items or files, when a jev-axi hook blocks a command, or when adding jev-axi to a project.
 compatibility: Requires the jev-axi CLI (npm install -g jev-axi, Node 22+), a TYPESAFE_API_KEY, and network access to api.typesafe.ai.
 license: MIT
 ---
