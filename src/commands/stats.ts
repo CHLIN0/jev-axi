@@ -16,7 +16,7 @@ import {
 } from "../usage.js";
 import { finish, type Renderable } from "./common.js";
 
-export const STATS_HELP = `usage: jev-axi stats [--days N] [--top N] [--json]
+export const STATS_HELP = `usage: jev-cli stats [--days N] [--top N] [--json]
 Lifetime usage and trends from the local stats ledger in your config folder: daily activity with sparklines,
 this period vs the previous one, per-command and per-project breakdowns, answer confidence, cache savings,
 and a projected monthly cost.
@@ -25,8 +25,8 @@ flags:
   --top <n>            rows per breakdown (default 8)
 ledger: ${paths.usageLedger()}
 examples:
-  jev-axi stats
-  jev-axi stats --days 7
+  jev-cli stats
+  jev-cli stats --days 7
 `;
 
 export async function statsCommand(args: string[]): Promise<Renderable> {
@@ -36,7 +36,7 @@ export async function statsCommand(args: string[]): Promise<Renderable> {
   const now = new Date();
   const all = readUsage(undefined, now);
   if (all.length === 0) {
-    return finish(p, { stats: "0 calls recorded yet", ledger: paths.usageLedger() }, [], ["Every jev-axi API call is logged locally; run a few commands and come back"]);
+    return finish(p, { stats: "0 calls recorded yet", ledger: paths.usageLedger() }, [], ["Every jev-cli API call is logged locally; run a few commands and come back"]);
   }
   const price = resolvePrices();
   const since = all.reduce((min, e) => (e.ts < min ? e.ts : min), all[0]!.ts).slice(0, 10);
@@ -113,6 +113,6 @@ export async function statsCommand(args: string[]): Promise<Renderable> {
   const help: string[] = [];
   if (answered && bands.escalate / answered > 0.25) help.push("Over a quarter of answers land in the escalate band; narrower questions or clearer criteria usually raise confidence");
   if (cur.calls && cur.questions / cur.calls < 1.5) help.push("Most calls ask a single question; batching related questions into one `ask` costs almost nothing extra");
-  help.push(`Run \`jev-axi usage --by day\` for a day-by-day table, or \`jev-axi stats --days 7\` for a shorter window`);
+  help.push(`Run \`jev-cli usage --by day\` for a day-by-day table, or \`jev-cli stats --days 7\` for a shorter window`);
   return finish(p, out, [], help);
 }

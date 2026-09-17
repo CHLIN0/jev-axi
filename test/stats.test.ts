@@ -50,7 +50,7 @@ describe("stats command", () => {
   });
 
   it("migrates a legacy ledger and renders lifetime, trends, and breakdowns", async () => {
-    const legacy = join(dir, "state", "jev-axi");
+    const legacy = join(dir, "state", "jev-cli");
     mkdirSync(legacy, { recursive: true });
     const today = new Date().toISOString();
     const old = new Date(Date.now() - 40 * 86_400_000).toISOString();
@@ -61,7 +61,7 @@ describe("stats command", () => {
     ];
     writeFileSync(join(legacy, "usage.jsonl"), rows.map((r) => JSON.stringify(r)).join("\n") + "\n");
     await main(["stats"], stdout);
-    expect(out.replace(/\\\\/g, "\\")).toContain(join(dir, "config", "jev-axi", "stats", "usage.jsonl"));
+    expect(out.replace(/\\\\/g, "\\")).toContain(join(dir, "config", "jev-cli", "stats", "usage.jsonl"));
     expect(out).toMatch(/lifetime: "?since/);
     expect(out).toContain("3 calls, 14 questions");
     expect(out).toMatch(/calls: "?2 \(\+100%\)/);

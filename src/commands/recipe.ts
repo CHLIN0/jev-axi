@@ -9,10 +9,10 @@ import { answerRow, distributionRows } from "../format.js";
 import { loadState, STATE_FLAGS } from "../state.js";
 import { evalOptions, finish, thresholdsFrom, type Renderable } from "./common.js";
 
-export const RECIPE_HELP = `usage: jev-axi recipe list | show <name> | run <name> [state flags] | new <name>
+export const RECIPE_HELP = `usage: jev-cli recipe list | show <name> | run <name> [state flags] | new <name>
 Reusable question sets in YAML. A recipe is one \`ask\` with saved questions, so a team writes its definition of
 "risky PR" or "urgent ticket" once and every agent session uses it.
-locations (project first): ./.jev-axi/recipes/<name>.yaml, then ${join("~", ".config", "jev-axi", "recipes")}/<name>.yaml
+locations (project first): ./.jev-cli/recipes/<name>.yaml, then ${join("~", ".config", "jev-cli", "recipes")}/<name>.yaml
 recipe file:
   description: one line
   questions:
@@ -20,8 +20,8 @@ recipe file:
 flags for run:
   --state/--text/--state-json  state (piped stdin when none given); --full for distributions
 examples:
-  jev-axi recipe new ticket-triage
-  cat ticket.txt | jev-axi recipe run ticket-triage
+  jev-cli recipe new ticket-triage
+  cat ticket.txt | jev-cli recipe run ticket-triage
 `;
 
 interface Recipe {
@@ -32,7 +32,7 @@ interface Recipe {
 }
 
 function recipeDirs(): string[] {
-  return [join(process.cwd(), ".jev-axi", "recipes"), join(paths.configDir(), "recipes")];
+  return [join(process.cwd(), ".jev-cli", "recipes"), join(paths.configDir(), "recipes")];
 }
 
 function listRecipes(): Recipe[] {
@@ -57,7 +57,7 @@ function loadRecipe(file: string, name: string): Recipe {
   const d = (doc ?? {}) as Record<string, unknown>;
   const questions = d["questions"];
   if (!questions || typeof questions !== "object" || Array.isArray(questions) || Object.keys(questions).length === 0) {
-    throw validation(`recipe ${name} has no \`questions\` map`, [`Edit ${file}; see \`jev-axi recipe --help\``]);
+    throw validation(`recipe ${name} has no \`questions\` map`, [`Edit ${file}; see \`jev-cli recipe --help\``]);
   }
   for (const [id, q] of Object.entries(questions as Record<string, Record<string, unknown>>)) {
     if (!q || !["choice", "score", "noul"].includes(String(q["type"])) || !q["instructions"]) {
@@ -75,7 +75,7 @@ function findRecipe(name: string): Recipe {
     }
   }
   const known = listRecipes().map((r) => r.name);
-  throw validation(`recipe not found: ${name}`, [known.length ? `Known recipes: ${known.join(", ")}` : "Run `jev-axi recipe new <name>` to create one"]);
+  throw validation(`recipe not found: ${name}`, [known.length ? `Known recipes: ${known.join(", ")}` : "Run `jev-cli recipe new <name>` to create one"]);
 }
 
 const TEMPLATE = (name: string) => `description: Triage an incoming message (edit me)
@@ -99,7 +99,7 @@ questions:
       - Calm, matter-of-fact
       - Frustrated but civil
       - Very angry or using strong language
-# run: cat message.txt | jev-axi recipe run ${name}
+# run: cat message.txt | jev-cli recipe run ${name}
 `;
 
 export async function recipeCommand(args: string[]): Promise<Renderable> {
@@ -108,16 +108,16 @@ export async function recipeCommand(args: string[]): Promise<Renderable> {
   if (!action || action === "list") {
     const recipes = listRecipes();
     if (recipes.length === 0) {
-      return finish(p, { recipes: "0 recipes found", locations: recipeDirs() }, [], ["Run `jev-axi recipe new <name>` to scaffold one"]);
+      return finish(p, { recipes: "0 recipes found", locations: recipeDirs() }, [], ["Run `jev-cli recipe new <name>` to scaffold one"]);
     }
     return finish(
       p,
       { recipes: recipes.map((r) => ({ name: r.name, questions: Object.keys(r.questions).length, description: r.description || "-" })) },
       [],
-      ["Run `jev-axi recipe run <name> --state <file>` to use one", "Run `jev-axi recipe show <name>` to see its questions"],
+      ["Run `jev-cli recipe run <name> --state <file>` to use one", "Run `jev-cli recipe show <name>` to see its questions"],
     );
   }
-  if (!name) throw validation(`recipe ${action} needs a name`, ["jev-axi recipe run <name>"]);
+  if (!name) throw validation(`recipe ${action} needs a name`, ["jev-cli recipe run <name>"]);
   if (action === "show") {
     const r = findRecipe(name);
     return finish(p, { recipe: r.name, file: r.file, description: r.description || "-", questions: r.questions as unknown as Record<string, unknown> }, []);
@@ -128,7 +128,7 @@ export async function recipeCommand(args: string[]): Promise<Renderable> {
     if (existsSync(file)) return finish(p, { recipe: `${name} already exists (no-op)`, file }, [], [`Edit ${file}`]);
     mkdirSync(dir, { recursive: true });
     writeFileSync(file, TEMPLATE(name));
-    return finish(p, { recipe: `${name} created`, file }, [], [`Edit the questions in ${file}`, `Run \`cat message.txt | jev-axi recipe run ${name}\``]);
+    return finish(p, { recipe: `${name} created`, file }, [], [`Edit the questions in ${file}`, `Run \`cat message.txt | jev-cli recipe run ${name}\``]);
   }
   if (action === "run") {
     const r = findRecipe(name);
@@ -140,5 +140,5 @@ export async function recipeCommand(args: string[]): Promise<Renderable> {
     if (p.bools["--full"]) out["distributions"] = Object.fromEntries(ids.map((id) => [id, distributionRows(res.answers[id]!)]));
     return finish(p, out, [res], p.bools["--full"] ? [] : ["Add --full for per-option probabilities"]);
   }
-  throw validation(`unknown recipe action ${JSON.stringify(action)}`, ["jev-axi recipe list | show <name> | run <name> | new <name>"]);
+  throw validation(`unknown recipe action ${JSON.stringify(action)}`, ["jev-cli recipe list | show <name> | run <name> | new <name>"]);
 }

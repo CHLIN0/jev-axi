@@ -6,11 +6,11 @@ about: Something behaves wrongly
 **Command and flags**
 
 ```
-jev-axi ...
+jev-cli ...
 ```
 
 **What happened** (paste the output; redact any state you cannot share)
 
 **What you expected**
 
-**Version** (`jev-axi --version`), OS, Node version
+**Version** (`jev-cli --version`), OS, Node version

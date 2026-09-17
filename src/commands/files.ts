@@ -7,21 +7,21 @@ import { chunkItems, gatherItems, itemsState, type Item } from "../items.js";
 import { FILES_QUESTIONS } from "../recipes/questions.js";
 import { evalOptions, finish, thresholdsFrom, type Renderable } from "./common.js";
 
-export const FILES_HELP = `usage: jev-axi files "<task>" [dirs|paths]... [--top N] [--preview CHARS]
+export const FILES_HELP = `usage: jev-cli files "<task>" [dirs|paths]... [--top N] [--preview CHARS]
 Which files would a developer open or change for a task. Ranks every source file under the given dirs (default: .)
 by the start of its contents; run this before reading files yourself.
 flags:
   --top <n>            rows to show (default 8)
   --preview <chars>    text per file sent to the model, after leading imports (default 700)
 examples:
-  jev-axi files "add a --json flag to the list command"
-  jev-axi files "why does login redirect loop" src/ app/
+  jev-cli files "add a --json flag to the list command"
+  jev-cli files "why does login redirect loop" src/ app/
 `;
 
 export async function filesCommand(args: string[]): Promise<Renderable> {
   const p = parseArgs(args, { "--top": "value", "--preview": "value" }, "files");
   const task = p.positional[0];
-  if (!task || task.trim() === "") throw validation("files needs a task description as its first argument", ['jev-axi files "<task>" [dirs...]']);
+  if (!task || task.trim() === "") throw validation("files needs a task description as its first argument", ['jev-cli files "<task>" [dirs...]']);
   const sources = p.positional.length > 1 ? p.positional.slice(1) : ["."];
   const top = numberFlag(p, "--top", 8, 1);
   const preview = numberFlag(p, "--preview", 700, 50);
@@ -53,6 +53,6 @@ export async function filesCommand(args: string[]): Promise<Renderable> {
   };
   const help: string[] = [];
   if (existsMax < 0.35) help.push("Low relevant_file_exists: the task may live outside these directories");
-  if (shown.length) help.push(`Open the top file(s) first; run \`jev-axi find "<question>" <file>\` to locate the exact lines`);
+  if (shown.length) help.push(`Open the top file(s) first; run \`jev-cli find "<question>" <file>\` to locate the exact lines`);
   return finish(p, out, results, help);
 }

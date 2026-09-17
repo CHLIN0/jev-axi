@@ -42,7 +42,7 @@ const origCwd = process.cwd();
 
 beforeEach(() => {
   out = "";
-  dir = mkdtempSync(join(tmpdir(), "jev-axi-test-"));
+  dir = mkdtempSync(join(tmpdir(), "jev-cli-test-"));
   process.chdir(dir); // no .env from the repo, and rank labels become relative
   process.env["XDG_CACHE_HOME"] = join(dir, "cache");
   process.env["XDG_STATE_HOME"] = join(dir, "state");

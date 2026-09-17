@@ -25,4 +25,4 @@ jobs:
       - run: pnpm test
       - run: pnpm check:skill
       - run: pnpm build
-      - run: node dist/bin/jev-axi.js --version
+      - run: node dist/bin/jev-cli.js --version

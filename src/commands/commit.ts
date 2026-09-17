@@ -6,15 +6,15 @@ import { loadCommits } from "../git.js";
 import { COMMIT_QUESTIONS, COMMIT_THRESHOLDS } from "../recipes/questions.js";
 import { evalOptions, finish, type Renderable } from "./common.js";
 
-export const COMMIT_HELP = `usage: jev-axi commit [--range <a..b>] [--limit N]
+export const COMMIT_HELP = `usage: jev-cli commit [--range <a..b>] [--limit N]
 Check commit messages against their diffs: conventional format, message matches the change, focus, and subject quality.
 Defaults to the last commit; one call per commit.
 flags:
   --range <a..b>       commits to check, e.g. main..HEAD
   --limit <n>          max commits (default 10)
 examples:
-  jev-axi commit
-  jev-axi commit --range main..HEAD
+  jev-cli commit
+  jev-cli commit --range main..HEAD
 `;
 
 export async function commitCommand(args: string[]): Promise<Renderable> {

@@ -7,7 +7,7 @@ import { oneLine, round } from "../format.js";
 import { chunkItems, gatherItems, itemsState, type Item } from "../items.js";
 import { evalOptions, finish, quote, thresholdsFrom } from "./common.js";
 
-export const RANK_HELP = `usage: jev-axi rank "<query>" [paths|dirs|-]... [--top N] [--preview CHARS] [--min P]
+export const RANK_HELP = `usage: jev-cli rank "<query>" [paths|dirs|-]... [--top N] [--preview CHARS] [--min P]
 Rank items by how well they match a query, plus a yes/no on whether anything matches at all.
 Items are files, every file under a directory, or stdin lines / JSONL. Sets over 255 items or the token budget are chunked automatically.
 flags:
@@ -15,27 +15,27 @@ flags:
   --preview <chars>    text per item sent to the model (default 600)
   --min <p>            hide rows below this probability (default 0.005)
 examples:
-  jev-axi rank "handles retry backoff for HTTP calls" src/
-  jev-axi rank "which test covers the auth middleware" test/ --top 5
-  gh-axi issue list --json | jev-axi rank "duplicate of: login page hangs on submit" -
+  jev-cli rank "handles retry backoff for HTTP calls" src/
+  jev-cli rank "which test covers the auth middleware" test/ --top 5
+  gh-axi issue list --json | jev-cli rank "duplicate of: login page hangs on submit" -
 `;
 
-export const FILTER_HELP = `usage: jev-axi filter "<predicate>" [paths|dirs|-]... [--min P] [--all] [--preview CHARS]
+export const FILTER_HELP = `usage: jev-cli filter "<predicate>" [paths|dirs|-]... [--min P] [--all] [--preview CHARS]
 Ask one yes/no question per item and keep those whose probability is at or above --min.
 flags:
   --min <p>            keep threshold (default 0.5)
   --all                show rejected items too
   --preview <chars>    text per item sent to the model (default 600)
 examples:
-  jev-axi filter "this file contains a TODO that describes a bug, not a feature" src/
-  cat errors.log | jev-axi filter "this log line is a real error, not a warning or noise" - --min 0.7
+  jev-cli filter "this file contains a TODO that describes a bug, not a feature" src/
+  cat errors.log | jev-cli filter "this log line is a real error, not a warning or noise" - --min 0.7
 `;
 
 const ITEM_FLAGS = { "--top": "value", "--preview": "value", "--min": "value", "--all": "bool" } as const;
 
 function query(p: { positional: string[] }, cmd: string): { q: string; sources: string[] } {
   const q = p.positional[0];
-  if (!q || q.trim() === "") throw validation(`${cmd} needs a query as its first argument`, [`jev-axi ${cmd} "<query>" <paths...>`]);
+  if (!q || q.trim() === "") throw validation(`${cmd} needs a query as its first argument`, [`jev-cli ${cmd} "<query>" <paths...>`]);
   return { q, sources: p.positional.slice(1) };
 }
 
@@ -47,7 +47,7 @@ export async function rankCommand(args: string[]): Promise<AxiRenderable> {
   const min = numberFlag(p, "--min", 0.005, 0, 1);
   const items = gatherItems(sources, { preview });
   if (items.length === 0) throw validation("0 items found in the given sources");
-  if (items.length === 1) throw validation("rank needs at least 2 items", ["Use `jev-axi check` to ask a yes/no question about one item"]);
+  if (items.length === 1) throw validation("rank needs at least 2 items", ["Use `jev-cli check` to ask a yes/no question about one item"]);
   const t = thresholdsFrom(p);
   const chunks = chunkItems(items);
   const results: EvalResult[] = [];

@@ -9,15 +9,15 @@ import { TRIAGE_DEFAULT_TAIL, TRIAGE_QUESTIONS } from "../recipes/questions.js";
 import { isStdinTTY, readStdinSync } from "../stdin.js";
 import { evalOptions, finish, thresholdsFrom, type Renderable } from "./common.js";
 
-export const TRIAGE_HELP = `usage: jev-axi triage [<log file>|-] [--tail N] [--context N]
+export const TRIAGE_HELP = `usage: jev-cli triage [<log file>|-] [--tail N] [--context N]
 Triage a build, test, or runtime log: the root-cause line, failure category, flaky-vs-real, and severity, in one call.
 Only the last --tail lines are sent (errors cluster at the end); each line is capped so the request fits the budget.
 flags:
   --tail <n>           lines from the end to analyze (default ${TRIAGE_DEFAULT_TAIL}, max ${MAX_CHOICE_OPTIONS})
   --context <n>        lines of context to show around the root-cause line (default 2)
 examples:
-  npm test 2>&1 | jev-axi triage
-  jev-axi triage build.log --tail 120
+  npm test 2>&1 | jev-cli triage
+  jev-cli triage build.log --tail 120
 `;
 
 export async function triageCommand(args: string[]): Promise<Renderable> {
@@ -29,7 +29,7 @@ export async function triageCommand(args: string[]): Promise<Renderable> {
   let text: string;
   let label: string;
   if (src === undefined || src === "-") {
-    if (isStdinTTY()) throw validation("triage needs a log file or piped stdin", ["npm test 2>&1 | jev-axi triage"]);
+    if (isStdinTTY()) throw validation("triage needs a log file or piped stdin", ["npm test 2>&1 | jev-cli triage"]);
     text = readStdinSync();
     label = "stdin";
   } else {

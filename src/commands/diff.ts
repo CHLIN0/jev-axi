@@ -9,7 +9,7 @@ import { DIFF_OVERALL, DIFF_PER_FILE, DIFF_THRESHOLDS } from "../recipes/questio
 import { isStdinTTY, readStdinSync } from "../stdin.js";
 import { evalOptions, finish, thresholdsFrom, type Renderable } from "./common.js";
 
-export const DIFF_HELP = `usage: jev-axi diff [--staged | --range <a..b> | --file <patch> | -]
+export const DIFF_HELP = `usage: jev-cli diff [--staged | --range <a..b> | --file <patch> | -]
 Review a diff before committing: per-file risk, missing tests, secrets, debug leftovers, plus overall scope and kind.
 Defaults to unstaged working-tree changes. Files are chunked to the token budget; large patches are truncated to ${DIFF_THRESHOLDS.patchChars} chars.
 flags:
@@ -18,9 +18,9 @@ flags:
   --file <patch>       review a unified diff file; or pipe one on stdin
   --full               show every file, not only flagged ones
 examples:
-  jev-axi diff --staged
-  jev-axi diff --range main..HEAD
-  git diff HEAD~3 | jev-axi diff -
+  jev-cli diff --staged
+  jev-cli diff --range main..HEAD
+  git diff HEAD~3 | jev-cli diff -
 `;
 
 interface FileVerdict {
@@ -43,7 +43,7 @@ export async function diffCommand(args: string[]): Promise<Renderable> {
   });
   const files = parseDiff(text);
   if (files.length === 0) {
-    return finish(p, { diff: label, files: "0 changed files; nothing to review" }, [], ["Run `jev-axi diff --staged` for the index or `--range main..HEAD` for commits"]);
+    return finish(p, { diff: label, files: "0 changed files; nothing to review" }, [], ["Run `jev-cli diff --staged` for the index or `--range main..HEAD` for commits"]);
   }
   const t = thresholdsFrom(p);
   // When the diff carries test files, a source file's tests are probably among them, so the

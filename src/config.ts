@@ -1,6 +1,6 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 
 export interface Prices {
   /** USD per 1M input tokens. */
@@ -26,19 +26,36 @@ export const DEFAULT_MODEL = "jev-latest";
 export const DEFAULT_PRICE: Required<Prices> = { input: 0.042, output: 0 };
 export const DEFAULT_THRESHOLDS: Thresholds = { act: 0.75, confirm: 0.45 };
 
+/** One-time rename of a pre-rename `jev-axi` directory to `jev-cli`, if the new one does not exist yet. */
+function adoptLegacyDir(dir: string): string {
+  const legacy = join(dirname(dir), "jev-axi");
+  if (!existsSync(dir) && existsSync(legacy)) {
+    try {
+      renameSync(legacy, dir);
+    } catch {
+      // leave both in place; the caller will just create the new dir
+    }
+  }
+  return dir;
+}
+
 function base(kind: "config" | "state" | "cache"): string {
+  return adoptLegacyDir(baseUnmigrated(kind));
+}
+
+function baseUnmigrated(kind: "config" | "state" | "cache"): string {
   const home = homedir();
   // Explicit XDG overrides win on every platform (tests and containers rely on this).
   const xdg = { config: "XDG_CONFIG_HOME", state: "XDG_STATE_HOME", cache: "XDG_CACHE_HOME" }[kind];
   const override = process.env[xdg]?.trim();
-  if (override) return join(override, "jev-axi");
+  if (override) return join(override, "jev-cli");
   if (process.platform === "win32") {
     const appdata = process.env["APPDATA"] ?? join(home, "AppData", "Roaming");
     const local = process.env["LOCALAPPDATA"] ?? join(home, "AppData", "Local");
-    return kind === "config" ? join(appdata, "jev-axi") : join(local, "jev-axi", kind);
+    return kind === "config" ? join(appdata, "jev-cli") : join(local, "jev-cli", kind);
   }
   const defaults = { config: join(home, ".config"), state: join(home, ".local", "state"), cache: join(home, ".cache") };
-  return join(defaults[kind], "jev-axi");
+  return join(defaults[kind], "jev-cli");
 }
 
 export const paths = {
