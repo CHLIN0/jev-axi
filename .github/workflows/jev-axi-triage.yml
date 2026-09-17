@@ -1,0 +1,31 @@
+# Dogfooding: explain failed ci runs with the action from the default branch.
+# Other repositories should use `uses: shiftynick/jev-axi@v0` as shown in the README.
+name: jev-axi triage
+on:
+  workflow_run:
+    workflows: [ci]
+    types: [completed]
+permissions:
+  actions: read
+  contents: read
+  pull-requests: write
+jobs:
+  triage:
+    if: github.event.workflow_run.conclusion == 'failure'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 10
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile && pnpm build
+      - uses: ./
+        with:
+          mode: triage
+          api-key: ${{ secrets.TYPESAFE_API_KEY }}
+        env:
+          JEV_AXI_BIN: '["node", "dist/bin/jev-axi.js"]'
