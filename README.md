@@ -190,6 +190,11 @@ cent.
 
 ## Agent integration
 
+- `jev-axi setup agent [--project]` installs `jev-explore`, a Claude Code subagent that
+  shortlists files with jev-axi before reading them. Claude Code does broad exploration in
+  subagents, which never see skills or hooks from the main session, so this is how jev-axi
+  reaches that work. `--replace-explore` installs it as `Explore`, overriding the built-in
+  explorer; `--remove` uninstalls. It preloads the jev-axi skill, so install that too.
 - `jev-axi setup hooks` installs SessionStart hooks for Claude Code, Codex, and
   OpenCode so each session begins with the status view. Add `--project` to
   scope it to the current repository.

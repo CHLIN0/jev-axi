@@ -122,6 +122,9 @@ def transcript_stats(session_id: str) -> dict:
     return stats
 
 
+JEV_CONDITIONS = ("jev-axi", "jev-axi-hook", "jev-axi-agent", "jev-axi-explore", "jev-axi-forced")
+
+
 def grade(task: dict, answer: str) -> list[str]:
     """Patterns the answer failed. `expect` needs all; `expect_min` needs at least `min` of `patterns`."""
     missing = [p for p in task.get("expect", []) if not re.search(p, answer, re.I)]
@@ -142,7 +145,7 @@ def run_one(task: dict, condition: str, rep: int, base: Path, work: Path, args) 
     env = dict(os.environ)
     env.pop("TYPESAFE_API_KEY", None)
     xdg_config, xdg_cache = run_dir / "jev-config", run_dir / "jev-cache"
-    if condition in ("jev-axi", "jev-axi-hook", "jev-axi-forced"):
+    if condition in JEV_CONDITIONS:
         dest = repo_dir / ".claude" / "skills" / "jev-axi"
         shutil.copytree(SKILL_DIR, dest, dirs_exist_ok=True)
         make_jev_shim(run_dir / "bin", xdg_config, xdg_cache)
@@ -155,6 +158,11 @@ def run_one(task: dict, condition: str, rep: int, base: Path, work: Path, args) 
             {"matcher": "", "hooks": [{"type": "command", "command": "jev-axi", "timeout": 10}]}
         )
         settings.write_text(json.dumps(data, indent=2))
+    if condition in ("jev-axi-agent", "jev-axi-explore"):
+        # What `jev-axi setup agent --project [--replace-explore]` installs.
+        extra = ["--replace-explore"] if condition == "jev-axi-explore" else []
+        subprocess.run([str(run_dir / "bin" / "jev-axi"), "setup", "agent", "--project", *extra],
+                       cwd=repo_dir, env=env, check=True, capture_output=True)
     if condition == "baseline":
         # Make sure no jev-axi is reachable in the baseline.
         env["PATH"] = ":".join(p for p in env["PATH"].split(":") if "askjev" not in p and "jev-axi" not in p)
@@ -206,7 +214,7 @@ def summarize(rows: list[dict]) -> str:
              "| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |"]
     tasks = sorted({r["task"] for r in rows})
     for t in tasks + ["ALL"]:
-        for c in ("baseline", "jev-axi", "jev-axi-hook", "jev-axi-forced"):
+        for c in ("baseline", *JEV_CONDITIONS):
             rs = [r for r in rows if (t == "ALL" or r["task"] == t) and r["condition"] == c]
             if not rs:
                 continue
@@ -216,7 +224,7 @@ def summarize(rows: list[dict]) -> str:
                 f"{med([r.get('jev_commands', 0) for r in rs]):.0f} | {sum(bool(r.get('skill_loaded')) for r in rs)}/{len(rs)} |")
     b = [r for r in rows if r["condition"] == "baseline"]
     cb = sum(r["total_cost_usd"] for r in b) / len(b) if b else 0
-    for c in ("jev-axi", "jev-axi-hook", "jev-axi-forced"):
+    for c in JEV_CONDITIONS:
         j = [r for r in rows if r["condition"] == c]
         if b and j and cb:
             cj = sum(r["total_cost_usd"] for r in j) / len(j)

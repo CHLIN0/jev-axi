@@ -20,6 +20,7 @@ Global flags accepted by every command: `--json` (machine-readable output), `--f
 - [triage](#triage)
 - [guard](#guard)
 - [setup](#setup)
+- [setup](#setup)
 - [commit](#commit)
 - [recipe](#recipe)
 - [usage](#usage)
@@ -228,14 +229,40 @@ examples:
 Block risky agent tool calls before they run.
 
 ```
-usage: jev-axi setup hooks [--project] | setup safety [--project] [--agent claude|codex] [--remove] | setup status [--project]
+usage: jev-axi setup hooks [--project] | setup safety [--project] [--agent claude|codex] [--remove] | setup agent [--project] [--replace-explore] [--remove] | setup status [--project]
 hooks    SessionStart hooks (Claude Code, Codex, OpenCode) so each session starts with jev-axi context.
 safety   PreToolUse hook that checks Bash commands and edits outside the project before they run, and blocks or asks
          about destructive, exfiltrating, or security-weakening calls. Routine calls are decided locally. See `jev-axi hook --help`.
+agent    Claude Code subagent `jev-explore` that ranks files with jev-axi before reading them, for broad exploration.
+         Claude Code tends to explore inside subagents, which never see skills or session hooks; this puts jev-axi there.
 flags:
   --project            install into the current repository instead of the user profile
   --agent <name>       for safety: claude (default) or codex
-  --remove             for safety: uninstall the hook
+  --remove             for safety or agent: uninstall
+  --replace-explore    for agent: install as `Explore`, overriding Claude Code's built-in explorer in this scope
+examples:
+  jev-axi setup hooks
+  jev-axi setup safety --project
+  jev-axi setup safety --agent codex
+  jev-axi setup status
+```
+
+## setup
+
+Block risky agent tool calls before they run.
+
+```
+usage: jev-axi setup hooks [--project] | setup safety [--project] [--agent claude|codex] [--remove] | setup agent [--project] [--replace-explore] [--remove] | setup status [--project]
+hooks    SessionStart hooks (Claude Code, Codex, OpenCode) so each session starts with jev-axi context.
+safety   PreToolUse hook that checks Bash commands and edits outside the project before they run, and blocks or asks
+         about destructive, exfiltrating, or security-weakening calls. Routine calls are decided locally. See `jev-axi hook --help`.
+agent    Claude Code subagent `jev-explore` that ranks files with jev-axi before reading them, for broad exploration.
+         Claude Code tends to explore inside subagents, which never see skills or session hooks; this puts jev-axi there.
+flags:
+  --project            install into the current repository instead of the user profile
+  --agent <name>       for safety: claude (default) or codex
+  --remove             for safety or agent: uninstall
+  --replace-explore    for agent: install as `Explore`, overriding Claude Code's built-in explorer in this scope
 examples:
   jev-axi setup hooks
   jev-axi setup safety --project

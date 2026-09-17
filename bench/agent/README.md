@@ -2,15 +2,18 @@
 
 Measures whether Claude Code gets real work done cheaper, faster, or more correctly when
 jev-axi is available. Each task runs as a headless `claude -p` session in a fresh copy of a
-pinned repository (`tasks.yaml` names the repo and commit), under up to three conditions:
+pinned repository (`tasks.yaml` names the repo and commit), under these conditions:
 
 | condition | skill | jev-axi on PATH | SessionStart hook |
 | --- | --- | --- | --- |
 | `baseline` | no | no | no |
 | `jev-axi` | in `.claude/skills` | yes | no |
 | `jev-axi-hook` | in `.claude/skills` | yes | yes, as `jev-axi setup hooks --project` installs |
+| `jev-axi-agent` | in `.claude/skills` | yes | no; adds the `jev-explore` subagent (`jev-axi setup agent --project`) |
+| `jev-axi-explore` | in `.claude/skills` | yes | no; the same subagent installed as `Explore` (`--replace-explore`) |
+| `jev-axi-forced` | in `.claude/skills` | yes | no; the prompt tells the agent to use jev-axi (upper bound) |
 
-Prompts never mention jev-axi, so the benchmark measures whether it gets used on its own and
+Prompts never mention jev-axi (except in `jev-axi-forced`), so the benchmark measures whether it gets used on its own and
 whether that pays off.
 
 ```sh

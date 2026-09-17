@@ -93,3 +93,24 @@ describe("setup safety", () => {
     expect(configureSafetyHook("codex", true, false).file).toBe(join(dir, ".codex", "hooks.json"));
   });
 });
+
+describe("setup agent", () => {
+  const origCwd = process.cwd();
+  afterEach(() => process.chdir(origCwd));
+  it("installs jev-explore with the skill preloaded, is idempotent, and never touches agents it didn't install", async () => {
+    const { configureAgent } = await import("../src/commands/agent.js");
+    const dir = mkdtempSync(join(tmpdir(), "agent-setup-"));
+    process.chdir(dir);
+    expect(configureAgent(true, false, false).status).toBe("installed");
+    expect(configureAgent(true, false, false).status).toBe("already installed (no-op)");
+    const text = readFileSync(join(dir, ".claude", "agents", "jev-explore.md"), "utf8");
+    expect(text).toMatch(/^---\nname: jev-explore\n/);
+    expect(text).toContain("skills:\n  - jev-axi");
+    const { mkdirSync } = await import("node:fs");
+    mkdirSync(join(dir, ".claude", "agents"), { recursive: true });
+    writeFileSync(join(dir, ".claude", "agents", "Explore.md"), "---\nname: Explore\ndescription: mine\n---\nmine");
+    expect(configureAgent(true, false, true).status).toMatch(/left untouched/);
+    expect(configureAgent(true, true, true).status).toMatch(/not ours/);
+    expect(configureAgent(true, true, false).status).toBe("removed");
+  });
+});

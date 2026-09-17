@@ -76,7 +76,8 @@ Try `grep` first when the task names something searchable. Otherwise:
 limits, every caller of a pattern), use `jev-axi filter "<condition>" <dirs> --all`, which asks the
 question of each file independently instead of picking one winner.
 
-If you hand exploration to a subagent, include these instructions in its prompt; subagents
+If you hand exploration to a subagent, prefer `jev-explore` when it is installed
+(`jev-axi setup agent`); otherwise include these instructions in its prompt, since subagents
 don't see this skill.
 
 **A build, test, or runtime command failed**
