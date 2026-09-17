@@ -52,6 +52,9 @@ export interface EvalOptions {
   model?: string;
   cache?: boolean;
   fetch?: Fetch;
+  /** Per-attempt timeout in ms and retry count, for latency-sensitive callers such as hooks. */
+  timeoutMs?: number;
+  maxRetries?: number;
 }
 
 let fetchOverride: Fetch | undefined;
@@ -243,7 +246,13 @@ export async function evaluate(
   const started = performance.now();
   let raw;
   try {
-    raw = await getClient(opts.fetch).systemOne({ state, questions, model });
+    raw = await getClient(opts.fetch).systemOne(
+      { state, questions, model },
+      {
+        ...(opts.timeoutMs !== undefined ? { timeout: opts.timeoutMs } : {}),
+        ...(opts.maxRetries !== undefined ? { retry: { maxRetries: opts.maxRetries } } : {}),
+      },
+    );
   } catch (error) {
     throw translateError(error);
   }

@@ -19,14 +19,15 @@ Global flags accepted by every command: `--json` (machine-readable output), `--f
 - [diff](#diff)
 - [triage](#triage)
 - [guard](#guard)
+- [setup](#setup)
 - [commit](#commit)
 - [recipe](#recipe)
 - [usage](#usage)
 - [stats](#stats)
 - [cache](#cache)
+- [hook](#hook)
 - [models](#models)
 - [config](#config)
-- [setup](#setup)
 
 ## pick
 
@@ -222,6 +223,26 @@ examples:
   jev-axi guard --state tool-output.txt --json
 ```
 
+## setup
+
+Block risky agent tool calls before they run.
+
+```
+usage: jev-axi setup hooks [--project] | setup safety [--project] [--agent claude|codex] [--remove] | setup status [--project]
+hooks    SessionStart hooks (Claude Code, Codex, OpenCode) so each session starts with jev-axi context.
+safety   PreToolUse hook that checks Bash commands and edits outside the project before they run, and blocks or asks
+         about destructive, exfiltrating, or security-weakening calls. Routine calls are decided locally. See `jev-axi hook --help`.
+flags:
+  --project            install into the current repository instead of the user profile
+  --agent <name>       for safety: claude (default) or codex
+  --remove             for safety: uninstall the hook
+examples:
+  jev-axi setup hooks
+  jev-axi setup safety --project
+  jev-axi setup safety --agent codex
+  jev-axi setup status
+```
+
 ## commit
 
 Check commit messages against diffs.
@@ -311,6 +332,26 @@ examples:
   jev-axi config set cacheTtlHours 0     # disable caching
 ```
 
+## hook
+
+```
+usage: jev-axi hook pre-tool-use [--agent claude|codex] [--input <json|path>] [--on-error allow|ask|deny] [--explain]
+Safety check for a tool call an agent is about to make, run as a PreToolUse hook. Reads the hook JSON on stdin.
+Routine calls (read-only commands, the project's tests and builds, edits inside the project) are decided locally with
+no API call. Other calls are sent to Jev with secrets redacted and scored for destructive actions, exfiltration,
+running downloaded code, weakening security, and changes outside the project.
+output: nothing (normal permission flow applies; never auto-approves), or a PreToolUse decision JSON to ask or deny.
+flags:
+  --agent <name>       output format: claude (default) or codex (Codex supports only deny, so ask becomes deny)
+  --input <json|path>  hook JSON instead of stdin, for testing
+  --on-error <mode>    when Jev is unreachable or slow: allow (default, normal flow), ask, or deny
+  --explain            print the decision, scores, and reason as TOON instead of hook JSON
+install: jev-axi setup safety [--project] [--agent claude|codex]
+log: every decision that reaches Jev is appended to ~/.config/jev-axi/stats/safety.jsonl
+examples:
+  echo '{"tool_name":"Bash","tool_input":{"command":"rm -rf ~/"},"cwd":"'"$PWD"'"}' | jev-axi hook pre-tool-use --explain
+```
+
 ## models
 
 ```
@@ -334,16 +375,4 @@ examples:
   jev-axi config
   jev-axi config set model jev-preview
   jev-axi config set price.input 0.10
-```
-
-## setup
-
-```
-usage: jev-axi setup hooks [--project] | jev-axi setup status
-Install or repair agent SessionStart hooks (Claude Code, Codex, OpenCode) so each session starts with jev-axi context.
-flags:
-  --project            install into the current repository instead of the user profile
-examples:
-  jev-axi setup hooks
-  jev-axi setup status
 ```

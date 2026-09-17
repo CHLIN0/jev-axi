@@ -14,6 +14,7 @@ import { GUARD_HELP, guardCommand } from "./commands/guard.js";
 import { COMMIT_HELP, commitCommand } from "./commands/commit.js";
 import { RECIPE_HELP, recipeCommand } from "./commands/recipe.js";
 import { STATS_HELP, statsCommand } from "./commands/stats.js";
+import { HOOK_HELP, hookCommand } from "./commands/hook.js";
 export { COMMAND_TABLE } from "./commands/table.js";
 import {
   CACHE_HELP,
@@ -35,6 +36,7 @@ export const TOP_HELP = `usage: jev-axi <command> [args] [flags]
 primitives[4]: pick, rate, check, ask
 batch[3]: rank, filter, find
 recipes[6]: diff, files, triage, guard, commit, recipe
+safety[2]: setup safety, hook pre-tool-use
 meta[7]: (none)=status, models, usage, stats, cache, config, setup
 global flags:
   --json, --full, --model <name>, --no-cache, --act <p>, --confirm <p>, --help, -v/--version
@@ -68,6 +70,7 @@ export const HELP: Record<string, string> = {
   recipe: RECIPE_HELP,
   stats: STATS_HELP,
   cache: CACHE_HELP,
+  hook: HOOK_HELP,
   models: MODELS_HELP,
   usage: USAGE_HELP,
   config: CONFIG_HELP,
@@ -115,6 +118,7 @@ export async function main(argv = process.argv.slice(2), stdout?: { write: (chun
       recipe: wrap(recipeCommand),
       stats: wrap(statsCommand),
       cache: wrap(cacheCommand),
+      hook: wrap(hookCommand),
       models: wrap(modelsCommand),
       usage: wrap(usageCommand),
       config: wrap(configCommand),

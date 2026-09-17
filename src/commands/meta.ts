@@ -1,4 +1,5 @@
-import { existsSync, readdirSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { configureSafetyHook, safetyHookPath as configureSafetyHookPath, SAFETY_HOOK_COMMAND } from "./hook.js";
 import type { Renderable as AxiRenderable } from "./common.js";
 import { AxiError, installSessionStartHooks, sessionStartHookStatus } from "axi-sdk-js";
 import { numberFlag, parseArgs } from "../args.js";
@@ -200,28 +201,59 @@ function statsView(): Record<string, unknown> {
   };
 }
 
-export const SETUP_HELP = `usage: jev-axi setup hooks [--project] | jev-axi setup status
-Install or repair agent SessionStart hooks (Claude Code, Codex, OpenCode) so each session starts with jev-axi context.
+export const SETUP_HELP = `usage: jev-axi setup hooks [--project] | setup safety [--project] [--agent claude|codex] [--remove] | setup status [--project]
+hooks    SessionStart hooks (Claude Code, Codex, OpenCode) so each session starts with jev-axi context.
+safety   PreToolUse hook that checks Bash commands and edits outside the project before they run, and blocks or asks
+         about destructive, exfiltrating, or security-weakening calls. Routine calls are decided locally. See \`jev-axi hook --help\`.
 flags:
   --project            install into the current repository instead of the user profile
+  --agent <name>       for safety: claude (default) or codex
+  --remove             for safety: uninstall the hook
 examples:
   jev-axi setup hooks
+  jev-axi setup safety --project
+  jev-axi setup safety --agent codex
   jev-axi setup status
 `;
 
 export async function setupCommand(args: string[]): Promise<AxiRenderable> {
-  const p = parseArgs(args, { "--project": "bool" }, "setup");
+  const p = parseArgs(args, { "--project": "bool", "--agent": "value", "--remove": "bool" }, "setup");
   const action = p.positional[0];
   const scope = p.bools["--project"] ? "project" : "user";
   if (action === "hooks") {
     installSessionStartHooks({ scope });
     return { hooks: { status: "installed", scope, integrations: "Claude Code, Codex, OpenCode" }, help: ["Restart your agent session to receive jev-axi ambient context"] };
   }
+  if (action === "safety") {
+    const agent = (p.values["--agent"] ?? "claude") as "claude" | "codex";
+    if (agent !== "claude" && agent !== "codex") throw validation("--agent must be claude or codex");
+    const { file, changed } = configureSafetyHook(agent, p.bools["--project"], p.bools["--remove"]);
+    const status = p.bools["--remove"] ? (changed ? "removed" : "not installed (no-op)") : changed ? "installed" : "already installed (no-op)";
+    const help = p.bools["--remove"]
+      ? []
+      : [
+          "Restart the agent session to activate it",
+          "Commands and edits outside the project are sent to TypeSafe's API with secrets redacted; routine calls never leave the machine",
+          "Test it: echo '{\"tool_name\":\"Bash\",\"tool_input\":{\"command\":\"rm -rf ~/\"}}' | jev-axi hook pre-tool-use --explain",
+        ];
+    return { safety: { status, agent, scope, file }, ...(help.length ? { help } : {}) };
+  }
   if (action === "status") {
     const s = sessionStartHookStatus({ scope });
-    return { hooks: { scope, claude: s.claude.installed ? "installed" : "missing", codex: s.codex.installed ? "installed" : "missing", opencode: s.opencode.installed ? "installed" : "missing" } };
+    const safetyFile = (agent: "claude" | "codex") => {
+      try {
+        const f = configureSafetyHookPath(agent, p.bools["--project"]);
+        return existsSync(f) && readFileSync(f, "utf8").includes(SAFETY_HOOK_COMMAND) ? "installed" : "missing";
+      } catch {
+        return "missing";
+      }
+    };
+    return {
+      hooks: { scope, claude: s.claude.installed ? "installed" : "missing", codex: s.codex.installed ? "installed" : "missing", opencode: s.opencode.installed ? "installed" : "missing" },
+      safety: { scope, claude: safetyFile("claude"), codex: safetyFile("codex") },
+    };
   }
-  throw new AxiError("Unknown setup action", "VALIDATION_ERROR", ["Run `jev-axi setup hooks` or `jev-axi setup status`"]);
+  throw new AxiError("Unknown setup action", "VALIDATION_ERROR", ["Run `jev-axi setup hooks`, `jev-axi setup safety`, or `jev-axi setup status`"]);
 }
 
 export function todayUsageLine(): string {
